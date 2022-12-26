@@ -1,0 +1,28 @@
+services:
+  - docker:dind
+
+.docker-setup:
+  before_script:
+    - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+
+merge-build:
+  extends: .docker-setup
+  stage: build
+  image: docker:latest
+  script:
+    - docker pull eziotobioli/meta-webhook:mr-$CI_MERGE_REQUEST_ID || true
+    - docker build -t eziotobioli/meta-webhook:mr-$CI_MERGE_REQUEST_ID .
+    - docker push eziotobioli/meta-webhook:mr-$CI_MERGE_REQUEST_ID
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+
+
+prod-build:
+  extends: .docker-setup
+  stage: build
+  image: docker:latest
+  script:
+    - docker build -t eziotobioli/meta-webhook:CI_COMMIT_TAG	 .
+    - docker push eziotobioli/meta-webhook:CI_COMMIT_TAG
+  only:
+    - tags

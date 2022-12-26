@@ -1,7 +1,8 @@
 use std::env::VarError;
 use std::error::Error;
-use redis::{Client, RedisResult, RedisError, Commands};
-use crate::structs::MessageRequest;
+use log::error;
+use redis::{Client, RedisResult, RedisError, Commands, PubSubCommands, ControlFlow};
+use crate::request_builder::{MessageBuilder, MessageRequest, MessageResponse, MessageType};
 
 
 fn create_client() -> Result<Client, RedisError> {
@@ -28,15 +29,17 @@ pub fn log_message(message: MessageRequest) -> Result<Vec<String>, RedisError>{
 
         let id: RedisResult<String> = con.xadd(format!("whatsapp-messages:{}", receiver), "*", &[
             ("from", receiver),
-            ("body", &message.body),
+            ("body", &message.clone().content.body.unwrap()),
             ("system-id", &format!("{}", &message.system_id)),
         ]);
 
-        publish_message(&message);
+        publish_message(&message).expect("Error publishing message");
 
         match id {
             Ok(id) => { created_registers.push(id) }
-            Err(err) => { return Err(err) }
+            Err(err) => {
+                return Err(err)
+            }
         }
 
     }
@@ -44,25 +47,32 @@ pub fn log_message(message: MessageRequest) -> Result<Vec<String>, RedisError>{
     Ok(created_registers)
 }
 
-pub fn subscribe_to_channel() -> Result<String, Box<dyn Error>> {
-    let client = create_client()?;
-    let mut con = client.get_connection()?;
-    let mut pubsub = con.as_pubsub();
-    pubsub.subscribe("whatsapp-notification:*")?;
-
-    loop {
-        println!("loop");
-        let msg = pubsub.get_message()?;
-        let payload : String = msg.get_payload()?;
-        println!("channel '{}': {}", msg.get_channel_name(), payload);
-    }
-}
-
 fn publish_message(message: &MessageRequest)-> Result<String, Box<dyn Error>>{
     let client = create_client()?;
     let mut con = client.get_connection()?;
-    let _: () = con.publish(format!("whatsapp-notification:{}", message.to[0]), &message.body).expect("err");
+    let _: () = con.publish(format!("whatsapp-notification:{}", message.to[0]), &message.clone().content.body.unwrap()).expect("err");
 
     Ok("".to_string())
 
 }
+
+pub fn create_message(message: &MessageRequest) -> Result<MessageResponse, Box<dyn Error>> {
+    let request = MessageBuilder::new()
+        .message_type(MessageType::Text, None)
+        .to("56936748406".to_string())
+        .body("test message".to_string())
+        .execute();
+
+    return match request {
+        Ok(response_body) => {
+            Ok(response_body)
+        }
+        Err(err) => {
+            error!("{}", format!("Couldnt proccess message creation: {}", err.to_string()).as_str());
+            panic!("{}",format!("Couldnt proccess message creation: {}", err.to_string()).as_str());
+            return Err(err)
+        }
+    }
+
+}
+
