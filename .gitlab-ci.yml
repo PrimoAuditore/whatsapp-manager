@@ -1,6 +1,9 @@
 services:
   - docker:dind
 
+variables:
+  ARTIFACT_NAME: "whatsapp-manager"
+
 .docker-setup:
   before_script:
     - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD

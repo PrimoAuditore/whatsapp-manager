@@ -144,7 +144,7 @@ impl StandardResponse{
     pub fn new() -> StandardResponse{
         StandardResponse{
             references: vec![],
-            errors: Some(vec![]),
+            errors: None,
         }
     }
 }

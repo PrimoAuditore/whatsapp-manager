@@ -51,16 +51,22 @@ async fn webhook(event: web::Json<Event>) -> impl Responder{
 async fn send_message(message: web::Json<MessageRequest>) -> impl Responder{
 
     let mut response: StandardResponse = StandardResponse::new();
+    let mut errors = vec![];
+    let mut references = vec![];
     let created_message = create_message(&message);
 
 
     match created_message {
-        Ok(ref_id) => {
-            let id = &ref_id.clone().messages[0].id;
-            response.references.push(ModifiedReference{ system: "WHATSAPP".to_string(), reference: id.to_string() })
+        Ok(responses) => {
+
+            for mut response in &responses{
+                let id = &response.messages[0].id;
+                references.push(ModifiedReference{ system: "WHATSAPP".to_string(), reference: id.to_string()})
+            }
         }
         Err(err) => {
-            response.errors.unwrap().push(err.to_string());
+
+            errors.push(err.to_string());
 
             error!("{}", format!("Message could not be sent"));
             panic!("{}",format!("Message could not be sent"));
@@ -74,15 +80,25 @@ async fn send_message(message: web::Json<MessageRequest>) -> impl Responder{
         Ok(redis_id) => {
 
             for id in redis_id{
-                response.references.push(ModifiedReference{ system: "REDIS".to_string(), reference: id })
+                references.push(ModifiedReference{ system: "REDIS".to_string(), reference: id })
             }
 
         }
         Err(err) => {
-            response.errors.unwrap().push(err.to_string());
+            errors.push(err.to_string());
         }
     }
 
-    HttpResponse::Ok().body("")
+    response.references = references;
+
+    if errors.len() > 0 {
+        response.errors = Some(errors);
+    }
+
+    return if response.errors.is_some() {
+        HttpResponse::InternalServerError().body(serde_json::to_string(&response).unwrap())
+    }else{
+        HttpResponse::Ok().body(serde_json::to_string(&response).unwrap())
+    }
 }
 

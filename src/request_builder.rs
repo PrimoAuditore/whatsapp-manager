@@ -30,8 +30,8 @@ pub struct ListMessage {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ButtonMessage {
-    title: String,
-    choices: Vec<String>
+    pub title: String,
+    pub choices: Vec<String>
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -47,6 +47,7 @@ pub struct WhatsappRequest{
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct InteractiveDefinition{
+    #[serde(rename(serialize = "type"))]
     interactive_type: String,
     body: Body,
     action: Action,
@@ -98,6 +99,7 @@ pub struct Row{
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Button {
+    #[serde(rename(serialize = "type"))]
     button_type: String,
     reply: Reply
 }
@@ -122,7 +124,7 @@ pub enum MessageType {
 }
 
 impl MessageType{
-    fn as_str(&self) -> &'static str {
+    pub fn as_str(&self) -> &'static str {
         match self {
             MessageType::Text => "text",
             MessageType::Interactive => "interactive",
@@ -131,10 +133,12 @@ impl MessageType{
         }
     }
 
-    fn from_str(message_type: &str) -> MessageType {
+    pub fn from_str(message_type: &str) -> MessageType {
         match message_type {
             "text" => MessageType::Text,
             "interactive" => MessageType::Interactive,
+            "button" => MessageType::InteractiveButton,
+            "list" => MessageType::InteractiveList,
             _ => {
                 error!("{}", format!("Message type {} was not found", String::from(message_type)).as_str());
                 panic!("{}", format!("Message type {} was not found", String::from(message_type)).as_str())
@@ -168,47 +172,48 @@ impl MessageBuilder {
 
     pub fn execute(&self) -> Result<MessageResponse, Box<dyn Error>>{
 
-        println!("{}", serde_json::to_string(&self.request).unwrap());
-        let agent: Agent = ureq::AgentBuilder::new()
-            .timeout_read(Duration::from_secs(5))
-            .timeout_write(Duration::from_secs(5))
-            .build();
 
-        let api_token = format!("Bearer: {}", std::env::var("META_TOKEN").unwrap());
+        println!("{:?}", serde_json::to_string(&self.request));
 
-        println!("{}", api_token);
-
-        let resp = agent.post("https://graph.facebook.com/v15.0/110000391967238/messages")
-            .set("Authorization", api_token.as_str())
-            .set("Content-Type", "application/json")
-            .send_json(&self.request)?
+        let resp = ureq::post("https://graph.facebook.com/v15.0/110000391967238/messages")
+            .set(
+                "Authorization",
+                format!("Bearer {}", std::env::var("META_TOKEN").unwrap()).as_str(),
+            )
+            .send_json(ureq::json!(&self.request))?
             .into_string();
 
         println!("{:?}", resp);
 
-        // match resp {
-        //     Ok(response_body) => {
-        //         let parsed_response: Result<MessageResponse, _> = serde_json::from_str(response_body.as_str());
-        // 
-        //         if parsed_response.is_err() {
-        //             error!("{}", format!("Couldnt parse element: {}", response_body));
-        //             panic!("{}", format!("Couldnt parse element: {}", response_body))
-        //         }
-        // 
-        //         Ok(parsed_response.unwrap())
-        //     }
-        //     Err(err) => {
-        //         error!("{}", format!("{}", err.to_string()));
-        //         panic!("{}", format!("{}", err.to_string()))
-        //     }
-        // }
-        Ok(MessageResponse{
-            messaging_product: "".to_string(),
-            contacts: vec![],
-            messages: vec![],
-        })
+        match resp {
+            Ok(response_body) => {
+                let parsed_response: Result<MessageResponse, _> = serde_json::from_str(response_body.as_str());
 
+                if parsed_response.is_err() {
+                    error!("{}", format!("Couldnt parse element: {}", response_body));
+                    panic!("{}", format!("Couldnt parse element: {}", response_body))
+                }
+
+                Ok(parsed_response.unwrap())
+            }
+            Err(err) => {
+                error!("{}", format!("{}", err.to_string()));
+                panic!("{}", format!("{}", err.to_string()))
+            }
+        }
     }
+
+    // pub fn manage_response(response:MessageResponse) -> Result<_, _> {
+    //     match response {
+    //         Ok(response_body) => {
+    //             Ok(response_body)
+    //         }
+    //         Err(err) => {
+    //             error!("{}", format!("Couldnt proccess message creation: {}", err.to_string()).as_str());
+    //             panic!("{}", format!("Couldnt proccess message creation: {}", err.to_string()).as_str());
+    //         }
+    //     }
+    // }
 
     pub fn message_type(&mut self, message_type: MessageType, composed_type: Option<MessageType>) -> &mut MessageBuilder {
 
@@ -248,7 +253,35 @@ impl MessageBuilder {
                 self.request.text = Some(webhooks::Text { body });
             }
             MessageType::Interactive | MessageType::InteractiveButton | MessageType::InteractiveList => {
-                self.request.clone().interactive.unwrap().body.text = body
+                let mut clone = self.request.interactive.clone();
+                clone.as_mut().unwrap().body.text = body;
+
+                self.request.interactive = clone;
+            }
+        }
+
+        self
+    }
+
+    pub fn header(&mut self, header: String) -> &mut MessageBuilder {
+
+        // Check if message type is already set
+        if self.request.message_type == "" {
+            error!("primary type is not set, please call the message_type method and set a value");
+            panic!("primary type is not set, please call the message_type method and set a value")
+        }
+
+
+        match MessageType::from_str(&self.request.message_type) {
+            MessageType::Text => {
+                error!("text messages doesn't allow header");
+                panic!("text messages doesn't allow header")
+            }
+            MessageType::Interactive | MessageType::InteractiveButton | MessageType::InteractiveList => {
+                let mut clone = self.request.interactive.clone();
+                clone.as_mut().unwrap().header.text = header;
+
+                self.request.interactive = clone;
             }
         }
 
@@ -261,13 +294,16 @@ impl MessageBuilder {
         self.request.to = phone_number;
         self
     }
-    pub fn add_reply_button(&mut self, button_content: &str, button_id: Option<&str>){
+    pub fn add_reply_button(&mut self, button_content: &str, button_id: Option<&str>) -> &mut MessageBuilder {
+
+        println!("{}", &self.request.message_type);
+        let mut copy = self.request.clone();
         if self.request.message_type == "text" {
             error!("Text message type doesnt allow actions");
             panic!("Text message type doesnt allow actions")
         }
 
-        match MessageType::from_str(&self.request.message_type) {
+        match MessageType::from_str(&self.request.interactive.as_ref().unwrap().interactive_type) {
             MessageType::InteractiveButton => {
                 let default = format!("{}-id", button_content.to_lowercase().replace(" ", "-"));
                 let button_id_str = button_id.unwrap_or(default.as_str());
@@ -278,8 +314,10 @@ impl MessageBuilder {
                         title: button_content.to_string()
                     },
                 };
+                // self.request.interactive.as_ref().unwrap().action.buttons.as_ref().unwrap().push(button);
+                copy.interactive.as_mut().unwrap().action.buttons.as_mut().unwrap().push(button);
 
-                self.request.clone().interactive.unwrap().action.buttons.unwrap().push(button);
+                // println!("{}", copy.interactive.unwrap().action.buttons.unwrap()[0].button_type);
             }
             MessageType::InteractiveList => {
                 error!("Invalid method for message type, use add_list_button method instead");
@@ -288,7 +326,11 @@ impl MessageBuilder {
             _ => {}
         }
 
-        ()
+
+
+        self.request = copy;
+
+        self
 
     }
 
@@ -309,7 +351,7 @@ impl MessageBuilder {
             panic!("Text message type doesnt allow actions")
         }
 
-        match MessageType::from_str(&self.request.message_type) {
+        match MessageType::from_str(&self.request.interactive.as_ref().unwrap().interactive_type) {
             MessageType::InteractiveList => {
 
                 let mut section: Section = Section{
