@@ -7,7 +7,6 @@ metadata:
   name: whatsapp-manager-ingress
   namespace: default
 spec:
-  ingressClassName: nginx
   tls:
     - hosts:
         - k8s.pescarauto.cl

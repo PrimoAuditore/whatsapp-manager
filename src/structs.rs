@@ -1,14 +1,18 @@
-use serde_derive::{Deserialize, Serialize};
 use serde::*;
+use serde_derive::{Deserialize, Serialize};
 
 pub mod webhooks {
 
     use serde_derive::{Deserialize, Serialize};
-    #[derive(Serialize, Deserialize)]
+    use crate::structs::Storable;
+
+    #[derive(Serialize, Deserialize, Clone)]
     pub struct Event {
         object: String,
         pub(crate) entry: Vec<Entry>,
     }
+
+    impl Storable for Event{}
 
     #[derive(Serialize, Deserialize)]
     pub struct MediaData {
@@ -20,19 +24,19 @@ pub mod webhooks {
         pub messaging_product: String,
     }
 
-    #[derive(Serialize, Deserialize)]
+    #[derive(Serialize, Deserialize, Clone)]
     pub struct Entry {
         id: String,
         pub(crate) changes: Vec<Change>,
     }
 
-    #[derive(Serialize, Deserialize)]
+    #[derive(Serialize, Deserialize, Clone)]
     pub struct Change {
         field: String,
         pub(crate) value: ChangeValue,
     }
 
-    #[derive(Serialize, Deserialize)]
+    #[derive(Serialize, Deserialize, Clone)]
     pub struct ChangeValue {
         messaging_product: String,
         metadata: ChangeMetadata,
@@ -41,7 +45,7 @@ pub mod webhooks {
         pub statuses: Option<Vec<Status>>,
     }
 
-    #[derive(Serialize, Deserialize)]
+    #[derive(Serialize, Deserialize, Clone)]
     pub struct Status {
         id: String,
         status: String,
@@ -50,25 +54,25 @@ pub mod webhooks {
         conversation: Option<Conversation>,
     }
 
-    #[derive(Serialize, Deserialize)]
+    #[derive(Serialize, Deserialize, Clone)]
     pub struct Conversation {
         id: String,
         origin: Origin,
     }
 
-    #[derive(Serialize, Deserialize)]
+    #[derive(Serialize, Deserialize, Clone)]
     pub struct Origin {
         #[serde(alias = "type")]
         origin_type: String,
     }
 
-    #[derive(Serialize, Deserialize)]
+    #[derive(Serialize, Deserialize, Clone)]
     pub struct ChangeMetadata {
         display_phone_number: String,
         phone_number_id: String,
     }
 
-    #[derive(Serialize, Deserialize)]
+    #[derive(Serialize, Deserialize, Clone)]
     pub struct Contact {
         profile: Profile,
         wa_id: String,
@@ -123,7 +127,8 @@ pub mod webhooks {
         id: String,
     }
 
-    #[derive(Serialize, Deserialize)]
+
+    #[derive(Serialize, Deserialize, Clone)]
     pub struct Profile {
         name: String,
     }
@@ -135,22 +140,42 @@ pub mod webhooks {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct StandardResponse{
+pub struct StandardResponse {
     pub references: Vec<ModifiedReference>,
     pub errors: Option<Vec<String>>,
 }
 
-impl StandardResponse{
-    pub fn new() -> StandardResponse{
-        StandardResponse{
+impl StandardResponse {
+    pub fn new() -> StandardResponse {
+        StandardResponse {
             references: vec![],
             errors: None,
         }
     }
 }
 
+
+pub trait Storable{
+}
+
+
+
+
+
 #[derive(Serialize, Deserialize, Clone)]
-pub struct ModifiedReference{
+pub struct ModifiedReference {
     pub(crate) system: String,
     pub(crate) reference: String,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct MessageLog{
+    pub timestamp: String,
+    pub destination_systems: Vec<u8>,
+    pub phone_number: String,
+    pub origin: String,
+    pub register_id: String
+}
+
+impl Storable for MessageLog{
 }
