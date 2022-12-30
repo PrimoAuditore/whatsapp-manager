@@ -29,25 +29,25 @@ async fn main() -> std::io::Result<()> {
             .service(webhook)
             .service(send_message)
     })
-        .bind(("127.0.0.1", 8080))?
+        .bind(("0.0.0.0", 8080))?
         .run()
         .await
 }
 
 
 
-#[get("/health")]
+#[get("/whatsapp-manager/health")]
 async fn health() -> impl Responder{
     "OK"
 }
 
-#[post("/webhook")]
+#[post("/whatsapp-manager/webhook")]
 async fn webhook(event: web::Json<Event>) -> impl Responder{
    "OK"
 }
 
 
-#[post("/message")]
+#[post("/whatsapp-manager/message")]
 async fn send_message(message: web::Json<MessageRequest>) -> impl Responder{
 
     let mut response: StandardResponse = StandardResponse::new();

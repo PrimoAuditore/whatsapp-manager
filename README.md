@@ -1,5 +1,6 @@
 ### Whatsapp Manager
 
+
 ### Purpose
 This application has the intention to abstract the communication through whatsapp in order to be used on multiple application without the setup needed.
 

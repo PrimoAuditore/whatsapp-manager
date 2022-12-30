@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: demo2
+  namespace: default
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: k8s.pescarauto.cl
+      http:
+        paths:
+          - backend:
+              service:
+                name: whatsapp-manager-svc
+                port:
+                  number: 80
+            path: /whatsapp-manager(/|$)(.*)
+            pathType: Prefix
