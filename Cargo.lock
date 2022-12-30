@@ -853,6 +853,8 @@ dependencies = [
  "itoa",
  "percent-encoding",
  "ryu",
+ "serde",
+ "serde_json",
  "sha1_smol",
  "url",
 ]
