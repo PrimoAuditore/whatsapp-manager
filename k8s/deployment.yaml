@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: whatsapp-manager-deploy
+  labels:
+    app: whatsapp-manager
+    system: fizzy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: whatsapp-manager
+  template:
+    metadata:
+      labels:
+        app: whatsapp-manager
+    spec:
+      containers:
+        - name: nginx
+          image: eziotobioli/whatsapp-manager:#{IMAGE_TAG}
+          env:
+            - name: RUST_LOG
+              value: "debug"
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: whatsapp-manager-env
+                  key: REDIS_URL
+            - name: META_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: whatsapp-manager-env
+                  key: META_TOKEN
+          ports:
+            - containerPort: 8080
