@@ -138,6 +138,7 @@ async fn validate(validation_parameters: HttpRequest) -> impl Responder {
         Err(err) => panic!("{}", err),
     };
 
+
     let mut param_map = HashMap::new();
 
     for param in validation_parameters.query_string().split("&") {
