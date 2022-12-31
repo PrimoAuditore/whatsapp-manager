@@ -23,9 +23,9 @@ merge-deployment:
   trigger:
     include: pipelines/mr.yml
     strategy: depend
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-
+  only:
+    refs:
+      - merge_requests
 
 #merge-service:
 #  extends: .kaniko-setup
