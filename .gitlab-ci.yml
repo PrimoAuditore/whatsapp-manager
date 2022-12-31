@@ -25,8 +25,6 @@ merge-deployment:
     strategy: depend
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-  tags:
-    - k8s-fizzy
 
 
 #merge-service:
