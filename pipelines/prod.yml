@@ -25,6 +25,7 @@ merge-service:
     - kubectl config use-context fizzy_soft/whatsapp-manager:fizzy
     - kubectl apply -f k8s/service.yaml
   rules:
+    -
     - changes:
         - k8s/service.yaml
   tags:
