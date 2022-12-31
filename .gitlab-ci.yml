@@ -23,9 +23,6 @@ merge-deployment:
   trigger:
     include: pipelines/mr.yml
     strategy: depend
-  only:
-    refs:
-      - merge_requests
 
 #merge-service:
 #  extends: .kaniko-setup
