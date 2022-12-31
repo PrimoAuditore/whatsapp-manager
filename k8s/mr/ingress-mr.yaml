@@ -16,7 +16,7 @@ spec:
         paths:
           - backend:
               service:
-                name: whatsapp-manager-svc
+                name: whatsapp-manager-mr-svc
                 port:
                   number: 80
             path: /whatsapp-manager/mr(/|$)(.*)

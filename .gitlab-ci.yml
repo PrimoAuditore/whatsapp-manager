@@ -33,3 +33,33 @@ prod-deploy:
   tags:
     - k8s-fizzy
 
+
+merge-build:
+  extends: .kaniko-setup
+  stage: build
+  image:
+    name: gcr.io/kaniko-project/executor:v1.9.0-debug
+    entrypoint: [""]
+  script:
+    - /kaniko/executor --context "${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/Dockerfile" --destination "eziotobioli/whatsapp-manager:mr-$CI_MERGE_REQUEST_IID"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  tags:
+    - k8s-fizzy
+
+merge-deploy:
+  stage: deploy
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: ['']
+  script:
+    - kubectl config use-context fizzy_soft/whatsapp-manager:fizzy
+    - TAG=mr-$CI_MERGE_REQUEST_IID
+    - sed -i "s/#{IMAGE_TAG}/$TAG/g" k8s/mr/deployment.yaml
+    - kubectl apply -f k8s/mr/deployment.yaml
+    - kubectl apply -f k8s/mr/service.yaml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  tags:
+    - k8s-fizzy
+

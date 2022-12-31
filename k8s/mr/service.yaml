@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: nginx
+    system: fizzy
+  name: whatsapp-manager-mr-svc
+  namespace: default
+spec:
+  ports:
+    - port: 80
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: whatsapp-manager-mr
+  type: ClusterIP
