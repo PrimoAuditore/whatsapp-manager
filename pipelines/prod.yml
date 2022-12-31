@@ -11,6 +11,8 @@ merge-deployment:
   rules:
     - changes:
         - k8s/deployment.yaml
+        - src/*
+        - Dockerfile
   tags:
     - k8s-fizzy
 

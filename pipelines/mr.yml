@@ -25,6 +25,8 @@ merge-service:
   rules:
     - changes:
         - k8s/mr/service.yaml
+        - src/*
+        - Dockerfile
   tags:
     - k8s-fizzy
 
