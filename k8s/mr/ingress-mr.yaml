@@ -6,10 +6,8 @@ metadata:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/rewrite-target: /$2
   name: whatsapp-manager-mr-ingress
-  system: fizzy
   namespace: default
 spec:
-  ingressClassName: nginx
   rules:
     - host: k8s.pescarauto.cl
       http:

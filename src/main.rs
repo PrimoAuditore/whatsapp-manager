@@ -34,6 +34,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::new("%U"))
             .service(health)
             .service(webhook)
+            .service(validate)
             .service(send_message)
     })
     .bind(("0.0.0.0", 8080))?
