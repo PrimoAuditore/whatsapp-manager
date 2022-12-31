@@ -17,7 +17,8 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: eziotobioli/whatsapp-manager:#{IMAGE_TAG}
+          imagePullPolicy: Always
+          image: eziotobioli/whatsapp-manager:mr-5
           env:
             - name: RUST_LOG
               valueFrom:
@@ -34,6 +35,11 @@ spec:
                 secretKeyRef:
                   name: whatsapp-manager-env
                   key: META_TOKEN
+            - name: VERIFY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: whatsapp-manager-env
+                  key: VERIFY_TOKEN
           ports:
             - containerPort: 8080
 ---
@@ -42,7 +48,7 @@ kind: Service
 metadata:
   labels:
     app: nginx
-    name: whatsapp-manager-mr-svc
+  name: whatsapp-manager-mr-svc
   namespace: default
 spec:
   ports:
