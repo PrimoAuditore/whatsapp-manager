@@ -30,7 +30,7 @@ merge-deployment:
     - kubectl apply -f k8s/mr/deployment.yaml
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-    - changes:
+      changes:
         - k8s/mr/deployment.yaml
   tags:
     - k8s-fizzy
