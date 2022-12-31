@@ -1,0 +1,45 @@
+merge-deployment:
+  stage: deploy
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: ['']
+  script:
+    - kubectl config use-context fizzy_soft/whatsapp-manager:fizzy
+    - TAG=$CI_COMMIT_TAG
+    - sed -i "s/#{IMAGE_TAG}/$TAG/g" k8s/deployment.yaml
+    - kubectl apply -f k8s/deployment.yaml
+  rules:
+    - changes:
+        - k8s/deployment.yaml
+  tags:
+    - k8s-fizzy
+
+merge-service:
+  stage: deploy
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: ['']
+  script:
+    - kubectl config use-context fizzy_soft/whatsapp-manager:fizzy
+    - kubectl apply -f k8s/service.yaml
+  rules:
+    - changes:
+        - k8s/service.yaml
+  tags:
+    - k8s-fizzy
+
+
+merge-ingress:
+  stage: deploy
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: ['']
+  script:
+    - kubectl config use-context fizzy_soft/whatsapp-manager:fizzy
+    - kubectl delete ingress whatsapp-manager-ingress
+    - kubectl apply -f k8s/ingress-prod.yaml
+  rules:
+    - changes:
+        - k8s/ingress-prod.yaml
+  tags:
+    - k8s-fizzy

@@ -5,7 +5,7 @@ metadata:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/rewrite-target: /$2
-  name: whatsapp-manager-mr-ingressdffd
+  name: whatsapp-manager-mr-ingress
   namespace: default
 spec:
   rules:
