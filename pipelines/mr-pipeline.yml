@@ -1,0 +1,18 @@
+merge-deployment:
+  stage: deploy
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: ['']
+  script:
+    - kubectl config use-context fizzy_soft/whatsapp-manager:fizzy
+    - TAG=mr-$CI_MERGE_REQUEST_IID"
+    - sed -i "s/#{IMAGE_TAG}/$TAG/g" k8s/prod.yaml
+    - kubectl apply -f k8s/mr/deployment.yaml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - changes:
+        - k8s/prod.yml
+        - src/*
+        - Dockerfile
+  tags:
+    - k8s-fizzy
