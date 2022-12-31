@@ -7,14 +7,16 @@ mod requests;
 mod structs;
 mod request_handler;
 
+use std::collections::HashMap;
+use std::env;
 use crate::error_manager::get_public_error;
 use crate::redis::{create_message, log_message, publish_message, store_message};
 use crate::request_builder::{MessageContent, MessageRequest, MessageResponse};
 use crate::structs::webhooks::Event;
 use crate::structs::{MessageLog, ModifiedReference, StandardResponse};
 use ::redis::RedisError;
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder, };
-use log::{error, trace};
+use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder, HttpRequest};
+use log::{debug, error, trace};
 use serde_derive::{Deserialize, Serialize};
 use std::error::Error;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -32,6 +34,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::new("%U"))
             .service(health)
             .service(webhook)
+            .service(validate)
             .service(send_message)
     })
     .bind(("0.0.0.0", 8080))?
@@ -125,6 +128,31 @@ async fn webhook(event: web::Json<Event>) -> impl Responder {
         HttpResponse::Ok().body(serde_json::to_string(&response).unwrap())
     };
 
+}
+
+
+#[get("/webhook")]
+async fn validate(validation_parameters: HttpRequest) -> impl Responder {
+    let verify_token = match env::var("VERIFY_TOKEN") {
+        Ok(x) => x,
+        Err(err) => panic!("{}", err),
+    };
+
+
+    let mut param_map = HashMap::new();
+
+    for param in validation_parameters.query_string().split("&") {
+        let param_vec: Vec<&str> = param.split("=").collect();
+        param_map.insert(param_vec[0], param_vec[1]);
+    }
+
+    if verify_token != param_map.get("hub.verify_token").unwrap().to_string() {
+        panic!("Received verification token is not equals to defined one")
+    }
+
+    debug!("{:?}", &param_map);
+
+    HttpResponse::Ok().body(param_map.get("hub.challenge").unwrap().to_string())
 }
 
 #[post("/message")]
