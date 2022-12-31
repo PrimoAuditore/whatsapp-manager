@@ -40,6 +40,8 @@ prod-deploy:
   stage: deploy
   trigger:
     include: pipelines/prod-pipeline.yml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   allow_failure: true
 
 merge-deploy:
@@ -47,5 +49,8 @@ merge-deploy:
   trigger:
     include: pipelines/mr-pipeline.yml
   allow_failure: true
+  rules:
+    - if: '$CI_COMMIT_TAG !~ "/^$/"'
+
 
 
