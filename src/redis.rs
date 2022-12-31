@@ -13,6 +13,7 @@ fn create_client() -> Result<Client, RedisError> {
     let url = std::env::var("REDIS_URL").unwrap();
     let client = redis::Client::open(url);
 
+
     return match client {
         Ok(client) => unsafe { Ok(client) },
         Err(err) => Err(err),
