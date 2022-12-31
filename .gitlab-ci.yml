@@ -28,10 +28,11 @@ merge-deployment:
     - TAG=mr-$CI_MERGE_REQUEST_IID"
     - sed -i "s/#{IMAGE_TAG}/$TAG/g" k8s/mr/deployment.yaml
     - kubectl apply -f k8s/mr/deployment.yaml
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-      changes:
-        - k8s/mr/deployment.yaml
+  only:
+    refs:
+      - merge_requests
+    changes:
+      - k8s/mr/deployment.yaml
   tags:
     - k8s-fizzy
 
