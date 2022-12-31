@@ -24,6 +24,7 @@ pub fn log_message(message: &MessageLog) -> Result<String, RedisError> {
     let client = create_client()?;
     let mut con = client.get_connection()?;
 
+
     let mut systems_list: String = String::from("");
 
     for system in &message.destination_systems{

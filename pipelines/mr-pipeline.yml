@@ -9,6 +9,7 @@ merge-deployment:
     - sed -i "s/#{IMAGE_TAG}/$TAG/g" k8s/prod.yaml
     - kubectl apply -f k8s/mr/deployment.yaml
   rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - changes:
         - k8s/prod.yml
         - src/*
