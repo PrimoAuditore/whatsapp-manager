@@ -13,11 +13,13 @@ use crate::request_builder::{MessageContent, MessageRequest, MessageResponse};
 use crate::structs::webhooks::Event;
 use crate::structs::{MessageLog, ModifiedReference, StandardResponse};
 use ::redis::RedisError;
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder, };
 use log::{error, trace};
 use serde_derive::{Deserialize, Serialize};
 use std::error::Error;
 use std::time::{SystemTime, UNIX_EPOCH};
+use actix_web::middleware::Logger;
+
 
 static SYSTEM_ID: &str = "01";
 
@@ -27,6 +29,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(|| {
         App::new()
+            .wrap(Logger::new("%U"))
             .service(health)
             .service(webhook)
             .service(send_message)
@@ -36,12 +39,12 @@ async fn main() -> std::io::Result<()> {
     .await
 }
 
-#[get("/whatsapp-manager/health")]
+#[get("/health")]
 async fn health() -> impl Responder {
     "OK"
 }
 
-#[post("/whatsapp-manager/webhook")]
+#[post("/webhook")]
 async fn webhook(event: web::Json<Event>) -> impl Responder {
     trace!("{}", serde_json::to_string_pretty(&event.0).unwrap());
 
@@ -124,7 +127,7 @@ async fn webhook(event: web::Json<Event>) -> impl Responder {
 
 }
 
-#[post("/whatsapp-manager/message")]
+#[post("/message")]
 async fn send_message(message: web::Json<MessageRequest>) -> impl Responder {
     let response = request_handler::send_message(message.0);
 

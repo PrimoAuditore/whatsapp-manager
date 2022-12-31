@@ -20,7 +20,10 @@ spec:
           image: eziotobioli/whatsapp-manager:#{IMAGE_TAG}
           env:
             - name: RUST_LOG
-              value: "debug"
+              valueFrom:
+                secretKeyRef:
+                  name: whatsapp-manager-env
+                  key: RUST_LOG
             - name: REDIS_URL
               valueFrom:
                 secretKeyRef:
