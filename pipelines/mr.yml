@@ -36,7 +36,7 @@ merge-ingress:
     entrypoint: ['']
   script:
     - kubectl config use-context fizzy_soft/whatsapp-manager:fizzy
-    - kubectl delete ingress whatsapp-manager-mr-ingress
+    - RES=kubectl delete ingress whatsapp-manager-mr-ingress || true
     - kubectl apply -f k8s/mr/ingress-mr.yaml
   rules:
     - changes:

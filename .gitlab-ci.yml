@@ -26,10 +26,12 @@ prod-deploy:
   stage: deploy
   trigger:
     include: pipelines/prod.yml
+  allow_failure: true
 
 merge-deploy:
   stage: deploy
   trigger:
     include: pipelines/mr.yml
+  allow_failure: true
 
 
