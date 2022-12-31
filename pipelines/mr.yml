@@ -13,3 +13,33 @@ merge-deployment:
         - k8s/mr/deployment.yaml
   tags:
     - k8s-fizzy
+
+merge-service:
+  stage: deploy
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: ['']
+  script:
+    - kubectl config use-context fizzy_soft/whatsapp-manager:fizzy
+    - kubectl apply -f k8s/mr/service.yaml
+  rules:
+    - changes:
+        - k8s/mr/service.yaml
+  tags:
+    - k8s-fizzy
+
+
+merge-ingress:
+  stage: deploy
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: ['']
+  script:
+    - kubectl config use-context fizzy_soft/whatsapp-manager:fizzy
+    - kubectl delete ingress whatsapp-manager-mr-ingress
+    - kubectl apply -f k8s/mr/ingress-mr.yaml
+  rules:
+    - changes:
+        - k8s/mr/ingress-mr.yaml
+  tags:
+    - k8s-fizzy
