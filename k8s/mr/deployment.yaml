@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: whatsapp-manager-mr-deploy
   labels:
-    app: whatsapp-managersd
+    app: whatsapp-managersddf
     system: fizzy
 spec:
   replicas: 1
