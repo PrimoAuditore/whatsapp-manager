@@ -171,7 +171,7 @@ pub struct ModifiedReference {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct MessageLog{
     pub timestamp: String,
-    pub destination_systems: Vec<u8>,
+    pub destination_systems: Vec<String>,
     pub phone_number: String,
     pub origin: String,
     pub register_id: String

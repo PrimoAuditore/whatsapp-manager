@@ -82,6 +82,13 @@ spec:
                   number: 80
             path: /whatsapp-manager/mr(/|$)(.*)
             pathType: Prefix
+          - backend:
+              service:
+                name: whatsapp-manager-svc
+                port:
+                  number: 80
+            path: /whatsapp-manager(/|$)(.*)
+            pathType: Prefix
   tls:
     - hosts:
         - k8s.pescarauto.cl

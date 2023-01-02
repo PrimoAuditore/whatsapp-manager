@@ -3,7 +3,6 @@ use log::{error, trace};
 use redis::{Client, Commands, ControlFlow, JsonCommands, PubSubCommands, RedisError, RedisResult};
 use std::env::VarError;
 use std::error::Error;
-use std::fmt::format;
 use serde::Serialize;
 use crate::request_builder;
 use crate::structs::{MessageLog, Storable};
@@ -81,22 +80,6 @@ pub fn create_message(message: &MessageRequest, to: String) -> Result<MessageRes
             match request {
                 Ok(response_body) => {
                     Ok(response_body)
-
-
-                    // let id = &response_body.messages[0].id;;
-                    // let log = MessageLog{
-                    //     timestamp: "".to_string(),
-                    //     destination_systems: vec![0],
-                    //     phone_number: receiver.to_string(),
-                    //     origin: "OUTGOING".to_string(), //OUTGOING or INCOMING
-                    //     register_id: id.to_string(),
-                    // };
-                    //
-                    // // Publish message
-                    // publish_message(&log, receiver)?;
-                    //
-                    // // Store message
-                    // store_message(message, receiver, id)?;
                 }
                 Err(err) => {
                     error!(
@@ -153,16 +136,43 @@ pub fn create_message(message: &MessageRequest, to: String) -> Result<MessageRes
 
 }
 
-// pub fn store_event(event: Event, from: &String, message_id: &String) -> Result<String, RedisError>{
-//
-//     let client = create_client().unwrap();
-//     let mut con = client.get_connection().unwrap();
-//
-//     let json = serde_json::to_string(&event).unwrap();
-//     let key = format!("incoming-messages:{}:{}", from, message_id);
-//
-//     con.json_set(key,"$", &json)
-// }
+pub fn get_user_mode(phone_number: &str) -> Result<u16, RedisError> {
+    let client = create_client().unwrap();
+    let mut con = client.get_connection().unwrap();
+
+    let mode: RedisResult<String> = con.hget(format!("selected-mode:{}", phone_number), "mode");
+
+    if mode.is_err(){
+
+        let is_nil = is_nil(mode.as_ref().unwrap_err());
+
+        // Sets user mode to 0 in case its the first message
+        return if is_nil {
+            set_user_mode(phone_number, "0");
+            Ok(0)
+        }else{
+            Err(mode.unwrap_err())
+        }
+    }
+
+    let parsed_mode = mode.unwrap().parse::<u16>().unwrap();
+
+    Ok(parsed_mode)
+
+}
+
+pub fn set_user_mode(phone_number: &str, mode: &str) -> Result<String, RedisError> {
+    let client = create_client().unwrap();
+    let mut con = client.get_connection().unwrap();
+
+    let mode: RedisResult<String> = con.hset(format!("selected-mode:{}", phone_number), "mode", mode);
+
+    if mode.is_ok() {
+        Ok(mode.unwrap().clone())
+    }else{
+        Err(mode.unwrap_err())
+    }
+}
 
 pub fn store_message(event: &impl Serialize, to: &String, message_id: &String, namespace: &str) -> Result<String, RedisError>{
 
@@ -176,4 +186,66 @@ pub fn store_message(event: &impl Serialize, to: &String, message_id: &String, n
     con.json_set(key,"$", &event)?;
 
     Ok(format!("{}:{}:{}", namespace, to, message_id))
+}
+
+pub fn get_destination_system(mode: u16) -> Result<Vec<String>, Box<dyn Error>> {
+
+    let client = create_client().unwrap();
+    let mut con = client.get_connection().unwrap();
+
+    let mode_list: Vec<String> = con.lrange(format!("mode-systems:{}", mode), 0,100).unwrap();
+
+    Ok(mode_list)
+}
+
+pub fn set_last_message(id: &str, phone_number: &str) -> Result<String, RedisError> {
+
+    let client = create_client().unwrap();
+    let mut con = client.get_connection().unwrap();
+
+    let res: String = con.set(format!("last-message:{}", phone_number), id).unwrap();
+
+    Ok(res)
+
+}
+
+pub fn get_user_last_message(phone_number: &str) -> Result<String, RedisError> {
+    let client = create_client().unwrap();
+    let mut con = client.get_connection().unwrap();
+
+    let mut res: RedisResult<String> = con.get(format!("last-message:{}", phone_number));
+
+    if res.is_err() {
+        let is_nil = is_nil(&res.as_ref().unwrap_err());
+
+        // Check if it is phone numbers first message
+        if is_nil {
+            set_last_message("", phone_number);
+
+            return Ok("".to_string())
+        }
+        return Err(res.unwrap_err())
+    }
+
+    Ok(res.unwrap())
+}
+
+pub fn get_user_message(message_id: String, phone_number: &str) -> Result<Event, RedisError> {
+    let client = create_client().unwrap();
+    let mut con = client.get_connection().unwrap();
+
+    let res: String = con.json_get(format!("incoming-messages:{}:{}", phone_number, message_id), ".").unwrap();
+
+    let event: Event = serde_json::from_str(&res).unwrap();
+
+    Ok(event)
+}
+
+
+fn is_nil(error: &RedisError) -> bool{
+    return if error.to_string().contains("response was nil") {
+        true
+    }else{
+        false
+    }
 }
