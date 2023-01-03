@@ -188,14 +188,23 @@ pub fn store_message(event: &impl Serialize, to: &String, message_id: &String, n
     Ok(format!("{}:{}:{}", namespace, to, message_id))
 }
 
-pub fn get_destination_system(mode: u16) -> Result<Vec<String>, Box<dyn Error>> {
+pub fn get_destination_system(mode: u16) -> Result<Vec<String>, RedisError> {
 
     let client = create_client().unwrap();
     let mut con = client.get_connection().unwrap();
 
-    let mode_list: Vec<String> = con.lrange(format!("mode-systems:{}", mode), 0,100).unwrap();
+    let mode_list = con.lrange(format!("mode-systems:{}", mode), 0,100);
 
-    Ok(mode_list)
+    if mode_list.is_err() {
+
+        if is_nil(&mode_list.as_ref().unwrap_err()) {
+            return Ok(vec![])
+        }
+
+        return Err(mode_list.unwrap_err())
+    }
+
+    Ok(mode_list.unwrap())
 }
 
 pub fn set_last_message(id: &str, phone_number: &str) -> Result<String, RedisError> {
@@ -242,7 +251,7 @@ pub fn get_user_message(message_id: String, phone_number: &str) -> Result<Event,
 }
 
 
-fn is_nil(error: &RedisError) -> bool{
+pub fn is_nil(error: &RedisError) -> bool{
     return if error.to_string().contains("response was nil") {
         true
     }else{

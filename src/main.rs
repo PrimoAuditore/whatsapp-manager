@@ -36,7 +36,8 @@ async fn main() -> std::io::Result<()> {
             .service(webhook)
             .service(validate)
             .service(send_message)
-            .service(send_menu)
+            .service(incoming_messages)
+            .service(outgoing_messages)
     })
     .bind(("0.0.0.0", 8080))?
     .run()
@@ -59,15 +60,28 @@ async fn webhook(event: web::Json<Event>) -> impl Responder {
 
 }
 
-#[post("/send-menu")]
-async fn send_menu(log: web::Json<MessageLog>) -> impl Responder {
+#[post("/incoming")]
+async fn incoming_messages(log: web::Json<MessageLog>) -> impl Responder {
     let response = request_handler::send_menu(log.0);
 
     match response {
         Ok(response) => HttpResponse::Ok().body(serde_json::to_string(&response).unwrap()),
         Err(response) => HttpResponse::InternalServerError().body(serde_json::to_string(&response).unwrap())
     }
+}
 
+#[post("/outgoing")]
+async fn outgoing_messages(log: web::Json<MessageLog>) -> impl Responder {
+    // let response = request_handler::send_menu(log.0);
+    //
+    // match response {
+    //     Ok(response) => HttpResponse::Ok().body(serde_json::to_string(&response).unwrap()),
+    //     Err(response) => HttpResponse::InternalServerError().body(serde_json::to_string(&response).unwrap())
+    // }
+
+    trace!("{}", serde_json::to_string(&log.0).unwrap());
+
+    HttpResponse::Ok()
 }
 
 

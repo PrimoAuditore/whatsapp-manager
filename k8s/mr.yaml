@@ -18,7 +18,7 @@ spec:
       containers:
         - name: nginx
           imagePullPolicy: Always
-          image: eziotobioli/whatsapp-manager:mr-5
+          image: eziotobioli/whatsapp-manager:mr-6
           env:
             - name: RUST_LOG
               valueFrom:

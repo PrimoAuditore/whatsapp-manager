@@ -65,6 +65,8 @@ curl --request POST \
 
 ### User Modes
 
-- 0 -> No mode selected
-- 
+- -1 -> No mode selected
+-  0 -> Menu sent
+-  1 -> Busqueda de repuesto
+-  2 -> Ayuda
 

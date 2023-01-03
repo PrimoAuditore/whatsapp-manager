@@ -1,9 +1,12 @@
 use std::error::Error;
+use std::fmt::format;
 use std::time::{SystemTime, UNIX_EPOCH};
 use actix_web::cookie::time::macros::offset;
 use actix_web::cookie::time::OffsetDateTime;
 use actix_web::HttpResponse;
 use log::{error, trace};
+use redis::RedisError;
+use serde::de::Unexpected::Str;
 use crate::redis::{create_message, log_message, publish_message, store_message, get_user_mode, get_destination_system, set_last_message, get_user_last_message, get_user_message, set_user_mode};
 use crate::request_builder::{MessageContent, MessageRequest, MessageResponse};
 use crate::structs::{MessageLog, ModifiedReference, StandardResponse};
@@ -129,7 +132,6 @@ pub fn webhook_message(event: Event) -> Result<StandardResponse, StandardRespons
     }
 
 
-    // Get user active mode
     let mode = get_user_mode(phone_number).unwrap();
 
     // Get mode destination systems
@@ -215,17 +217,195 @@ pub fn webhook_message(event: Event) -> Result<StandardResponse, StandardRespons
 
 pub fn send_menu(log: MessageLog) -> Result<StandardResponse, StandardResponse> {
 
+    let mut response: StandardResponse = StandardResponse::new();
+    let mut errors:Vec<String> = vec![];
+    let mut references = vec![];
+
+    // If user has no mode set(mode 0)
+    let mode = get_user_mode(&log.phone_number).unwrap();
+    trace!("current mode: {}",&mode);
+    if mode == 100 {
+        let request = MessageRequest{
+            system_id: 1,
+            to: vec![String::from(&log.phone_number)],
+            message_type: "text".to_string(),
+            content: MessageContent {
+                body: Some("Opciones disponibles:\n 1. Busqueda respuesto.\n 2. Ayuda.".to_string()),
+                list: None,
+                buttons: None,
+            },
+        };
+
+        send_message(request);
+        set_user_mode(&log.phone_number, "0");
+
+
+        return Ok(response);
+    }
+
+
+    let ws_message_id = get_user_last_message(&log.phone_number);
+
+    if ws_message_id.is_err(){
+        errors.push(ws_message_id.unwrap_err().to_string());
+        response.references = references;
+        response.errors = None;
+
+        return Err(response)
+    }
+
+    trace!("User last message id: {}", ws_message_id.as_ref().unwrap());
+
+    let ws_message: Result<Event, RedisError> = get_user_message(ws_message_id.as_ref().unwrap().to_string(), &log.phone_number);
+
+    if ws_message.is_err(){
+        errors.push("Error obtaining user message".to_string());
+        response.references = references;
+        response.errors = Some(errors);
+
+        return Err(response)
+    }
+
+    // Check if message type is a text message
+    let message_type = String::from(&ws_message.as_ref().unwrap().entry[0].changes[0].value.messages.as_ref().unwrap()[0].message_type);
+
+    trace!("message Type: {}", &message_type);
+
+    if message_type != "text" {
+        errors.push("Message type has to be a text message, with only the number of the mode to be selected.".to_string());
+
+        let request = MessageRequest{
+            system_id: 1,
+            to: vec![log.phone_number],
+            message_type: "text".to_string(),
+            content: MessageContent {
+                body: Some("La opcion ingresada no es valida, debe ingresar solamente el numero de la opcion a seleccionar, intente nuevamente.".to_string()),
+                list: None,
+                buttons: None,
+            },
+        };
+
+        send_message(request);
+        response.references = references;
+        response.errors = Some(errors);
+
+        return Err(response)
+    }
+
+    // Check if user wanna change mode
+    if mode != 0 && ws_message.as_ref().unwrap().entry[0].changes[0].value.messages.as_ref().unwrap()[0].text.as_ref().unwrap().body.to_lowercase() == "salir"{
+
+        trace!("User exiting mode {}", &mode);
+
+        set_user_mode(&log.phone_number, "-1");
+        send_menu(log.clone());
+
+    }
+
+    // check if message is a number
+    let option = ws_message.as_ref().unwrap().entry[0].changes[0].value.messages.as_ref().unwrap()[0].text.as_ref().unwrap().body.parse::<u8>();
+
+
+    if option.is_err() {
+        errors.push("La opcion ingresada no es valida, debe ingresar solamente el numero de la opcion a seleccionar, intente nuevamente.".to_string());
+
+        let request = MessageRequest{
+            system_id: 1,
+            to: vec![log.phone_number],
+            message_type: "text".to_string(),
+            content: MessageContent {
+                body: Some("La opcion ingresada no es valida, debe ingresar solamente el numero de la opcion a seleccionar, intente nuevamente.".to_string()),
+                list: None,
+                buttons: None,
+            },
+        };
+
+        send_message(request);
+        response.references = references;
+        response.errors = Some(errors);
+
+        return Err(response)
+    }
+
+    let option_number = option.unwrap();
+
+    trace!("Option selected: {}", &option_number);
+
+    // check if option is between valid modes
+    let systems = get_destination_system(option_number as u16);
+
+    if systems.is_err() {
+        errors.push(systems.as_ref().unwrap_err().to_string());
+
+        response.references = references;
+        response.errors = Some(errors);
+
+        return Err(response)
+    }
+
+    trace!("mode {} systems: {:?}", option_number, systems.as_ref().unwrap());
+
+    if systems.as_ref().unwrap().is_empty() {
+        errors.push("El modo seleccionado no se encuentra entre las opciones disponibles, selecciona un modo listado.".to_string());
+        let request = MessageRequest{
+            system_id: 1,
+            to: vec![log.phone_number.clone()],
+            message_type: "text".to_string(),
+            content: MessageContent {
+                body: Some("El modo seleccionado no se encuentra entre las opciones disponibles, selecciona un modo listado.".to_string()),
+                list: None,
+                buttons: None,
+            },
+        };
+
+        send_message(request);
+
+        response.references = references;
+        response.errors = Some(errors);
+
+        return Err(response)
+    }
+
+    // Set user new mode
+    set_user_mode(&log.phone_number, &option_number.to_string());
+
+
+    // Notify user selection
+    let timestamp = match SystemTime::now().duration_since(UNIX_EPOCH) {
+        Ok(n) => n.as_millis().to_string(),
+        Err(_) => panic!("SystemTime before UNIX EPOCH!"),
+    };
+
+    let notification_log = MessageLog{
+        timestamp: timestamp,
+        destination_systems: vec!["1".to_string()],
+        phone_number: String::from(&log.phone_number),
+        origin: "OUTGOING".to_string(),
+        register_id: ws_message_id.unwrap(),
+    };
+
+    // TODO: Implement retries
+    publish_message(&notification_log, &log.phone_number);
+
+
     let request = MessageRequest{
         system_id: 1,
         to: vec![log.phone_number],
         message_type: "text".to_string(),
         content: MessageContent {
-            body: Some("Opciones disponibles:\n 1. Busqueda respuesto.\n 2. Ayuda.".to_string()),
+            body: Some(format!("Ha seleccionado el opcion {}, si desea seleccionar otra opcion esriba 'salir' en el chat.", option_number)),
             list: None,
             buttons: None,
         },
     };
 
-    send_message(request)
+
+
+    send_message(request);
+
+    response.references = references;
+    response.errors = None;
+
+    Ok(response)
 
 }
