@@ -3,25 +3,24 @@ extern crate core;
 mod error_manager;
 mod redis;
 mod request_builder;
+mod request_handler;
 mod requests;
 mod structs;
-mod request_handler;
 
-use std::collections::HashMap;
-use std::env;
 use crate::error_manager::get_public_error;
 use crate::redis::{create_message, log_message, publish_message, store_message};
 use crate::request_builder::{MessageContent, MessageRequest, MessageResponse};
 use crate::structs::webhooks::Event;
 use crate::structs::{MessageLog, ModifiedReference, StandardResponse};
 use ::redis::RedisError;
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder, HttpRequest};
+use actix_web::middleware::Logger;
+use actix_web::{get, post, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use log::{debug, error, trace};
 use serde_derive::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::env;
 use std::error::Error;
 use std::time::{SystemTime, UNIX_EPOCH};
-use actix_web::middleware::Logger;
-
 
 static SYSTEM_ID: &str = "01";
 
@@ -55,9 +54,10 @@ async fn webhook(event: web::Json<Event>) -> impl Responder {
 
     match response {
         Ok(response) => HttpResponse::Ok().body(serde_json::to_string(&response).unwrap()),
-        Err(response) => HttpResponse::InternalServerError().body(serde_json::to_string(&response).unwrap())
+        Err(response) => {
+            HttpResponse::InternalServerError().body(serde_json::to_string(&response).unwrap())
+        }
     }
-
 }
 
 #[post("/incoming")]
@@ -66,7 +66,9 @@ async fn incoming_messages(log: web::Json<MessageLog>) -> impl Responder {
 
     match response {
         Ok(response) => HttpResponse::Ok().body(serde_json::to_string(&response).unwrap()),
-        Err(response) => HttpResponse::InternalServerError().body(serde_json::to_string(&response).unwrap())
+        Err(response) => {
+            HttpResponse::InternalServerError().body(serde_json::to_string(&response).unwrap())
+        }
     }
 }
 
@@ -84,14 +86,12 @@ async fn outgoing_messages(log: web::Json<MessageLog>) -> impl Responder {
     HttpResponse::Ok()
 }
 
-
 #[get("/webhook")]
 async fn validate(validation_parameters: HttpRequest) -> impl Responder {
     let verify_token = match env::var("VERIFY_TOKEN") {
         Ok(x) => x,
         Err(err) => panic!("{}", err),
     };
-
 
     let mut param_map = HashMap::new();
 
@@ -109,13 +109,14 @@ async fn validate(validation_parameters: HttpRequest) -> impl Responder {
     HttpResponse::Ok().body(param_map.get("hub.challenge").unwrap().to_string())
 }
 
-
 #[post("/message")]
 async fn send_message(message: web::Json<MessageRequest>) -> impl Responder {
     let response = request_handler::send_message(message.0);
 
     match response {
         Ok(response) => HttpResponse::Ok().body(serde_json::to_string(&response).unwrap()),
-        Err(response) => HttpResponse::InternalServerError().body(serde_json::to_string(&response).unwrap())
+        Err(response) => {
+            HttpResponse::InternalServerError().body(serde_json::to_string(&response).unwrap())
+        }
     }
 }

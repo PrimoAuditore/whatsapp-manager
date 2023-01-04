@@ -1,17 +1,16 @@
+use crate::request_builder;
 use crate::request_builder::{MessageBuilder, MessageRequest, MessageResponse, MessageType};
+use crate::structs::webhooks::Event;
+use crate::structs::{MessageLog, Storable};
 use log::{debug, error, trace};
 use redis::{Client, Commands, ControlFlow, JsonCommands, PubSubCommands, RedisError, RedisResult};
+use serde::Serialize;
 use std::env::VarError;
 use std::error::Error;
-use serde::Serialize;
-use crate::request_builder;
-use crate::structs::{MessageLog, Storable};
-use crate::structs::webhooks::Event;
 
 fn create_client() -> Result<Client, RedisError> {
     let url = std::env::var("REDIS_URL").unwrap();
     let client = redis::Client::open(url);
-
 
     return match client {
         Ok(client) => unsafe { Ok(client) },
@@ -23,13 +22,11 @@ pub fn log_message(message: &MessageLog) -> Result<String, RedisError> {
     let client = create_client()?;
     let mut con = client.get_connection()?;
 
-
     let mut systems_list: String = String::from("");
 
-    for system in &message.destination_systems{
+    for system in &message.destination_systems {
         systems_list.push_str(format!("{}", system).as_str())
     }
-
 
     let id: RedisResult<String> = con.xadd(
         "whatsapp-logs",
@@ -48,11 +45,13 @@ pub fn log_message(message: &MessageLog) -> Result<String, RedisError> {
         Err(err) => {
             return Err(err);
         }
-    }
-
+    };
 }
 
-pub fn publish_message(message: &MessageLog, phone_number: &String) -> Result<String, Box<dyn Error>> {
+pub fn publish_message(
+    message: &MessageLog,
+    phone_number: &String,
+) -> Result<String, Box<dyn Error>> {
     let client = create_client()?;
     let mut con = client.get_connection()?;
     let _: () = con
@@ -65,7 +64,10 @@ pub fn publish_message(message: &MessageLog, phone_number: &String) -> Result<St
     Ok("OK".to_string())
 }
 
-pub fn create_message(message: &MessageRequest, to: String) -> Result<MessageResponse, Box<dyn Error>> {
+pub fn create_message(
+    message: &MessageRequest,
+    to: String,
+) -> Result<MessageResponse, Box<dyn Error>> {
     let mut request = MessageBuilder::new();
     let mut responses: Vec<MessageResponse> = vec![];
 
@@ -78,22 +80,17 @@ pub fn create_message(message: &MessageRequest, to: String) -> Result<MessageRes
                 .execute();
 
             match request {
-                Ok(response_body) => {
-                    Ok(response_body)
-                }
+                Ok(response_body) => Ok(response_body),
                 Err(err) => {
                     error!(
-                            "{}",
-                            format!("Couldnt proccess message creation: {}", err.to_string())
-                                .as_str()
-                        );
+                        "{}",
+                        format!("Couldnt proccess message creation: {}", err.to_string()).as_str()
+                    );
                     Err(err)
                 }
             }
-
         }
         MessageType::InteractiveButton => {
-
             let mut request = MessageBuilder::new()
                 .message_type(
                     MessageType::Interactive,
@@ -111,19 +108,15 @@ pub fn create_message(message: &MessageRequest, to: String) -> Result<MessageRes
             let response = request.execute();
 
             match response {
-                Ok(response_body) => {
-                    Ok(response_body)
-                }
+                Ok(response_body) => Ok(response_body),
                 Err(err) => {
                     error!(
-                            "{}",
-                            format!("Couldnt proccess message creation: {}", err.to_string())
-                                .as_str()
-                        );
+                        "{}",
+                        format!("Couldnt proccess message creation: {}", err.to_string()).as_str()
+                    );
                     Err(err)
                 }
             }
-
         }
 
         MessageType::InteractiveList => {
@@ -132,8 +125,7 @@ pub fn create_message(message: &MessageRequest, to: String) -> Result<MessageRes
         _ => {
             panic!("Invalid option")
         }
-    }
-
+    };
 }
 
 pub fn get_user_mode(phone_number: &str) -> Result<u16, RedisError> {
@@ -142,41 +134,42 @@ pub fn get_user_mode(phone_number: &str) -> Result<u16, RedisError> {
 
     let mode: RedisResult<String> = con.hget(format!("selected-mode:{}", phone_number), "mode");
 
-    if mode.is_err(){
-
-
+    if mode.is_err() {
         let is_nil = is_nil(mode.as_ref().unwrap_err());
         // Sets user mode to 0 in case its the first message
         return if is_nil {
             set_user_mode(phone_number, "100");
             Ok(0)
-        }else{
+        } else {
             Err(mode.unwrap_err())
-        }
+        };
     }
 
     let parsed_mode = mode.unwrap().parse::<u16>().unwrap();
 
-
     Ok(parsed_mode)
-
 }
 
 pub fn set_user_mode(phone_number: &str, mode: &str) -> Result<String, RedisError> {
     let client = create_client().unwrap();
     let mut con = client.get_connection().unwrap();
 
-    let mode: RedisResult<String> = con.hset(format!("selected-mode:{}", phone_number), "mode", mode);
+    let mode: RedisResult<String> =
+        con.hset(format!("selected-mode:{}", phone_number), "mode", mode);
 
     if mode.is_ok() {
         Ok(mode.unwrap().clone())
-    }else{
+    } else {
         Err(mode.unwrap_err())
     }
 }
 
-pub fn store_message(event: &impl Serialize, to: &String, message_id: &String, namespace: &str) -> Result<String, RedisError>{
-
+pub fn store_message(
+    event: &impl Serialize,
+    to: &String,
+    message_id: &String,
+    namespace: &str,
+) -> Result<String, RedisError> {
     let client = create_client().unwrap();
     let mut con = client.get_connection().unwrap();
 
@@ -184,39 +177,37 @@ pub fn store_message(event: &impl Serialize, to: &String, message_id: &String, n
     trace!("JSON: {}", json);
     let key = format!("{}:{}:{}", namespace, to, message_id);
 
-    con.json_set(key,"$", &event)?;
+    con.json_set(key, "$", &event)?;
 
     Ok(format!("{}:{}:{}", namespace, to, message_id))
 }
 
 pub fn get_destination_system(mode: u16) -> Result<Vec<String>, RedisError> {
-
     let client = create_client().unwrap();
     let mut con = client.get_connection().unwrap();
 
-    let mode_list = con.lrange(format!("mode-systems:{}", mode), 0,100);
+    let mode_list = con.lrange(format!("mode-systems:{}", mode), 0, 100);
 
     if mode_list.is_err() {
-
         if is_nil(&mode_list.as_ref().unwrap_err()) {
-            return Ok(vec![])
+            return Ok(vec![]);
         }
 
-        return Err(mode_list.unwrap_err())
+        return Err(mode_list.unwrap_err());
     }
 
     Ok(mode_list.unwrap())
 }
 
 pub fn set_last_message(id: &str, phone_number: &str) -> Result<String, RedisError> {
-
     let client = create_client().unwrap();
     let mut con = client.get_connection().unwrap();
 
-    let res: String = con.set(format!("last-message:{}", phone_number), id).unwrap();
+    let res: String = con
+        .set(format!("last-message:{}", phone_number), id)
+        .unwrap();
 
     Ok(res)
-
 }
 
 pub fn get_user_last_message(phone_number: &str) -> Result<String, RedisError> {
@@ -232,9 +223,9 @@ pub fn get_user_last_message(phone_number: &str) -> Result<String, RedisError> {
         if is_nil {
             set_last_message("", phone_number);
 
-            return Ok("".to_string())
+            return Ok("".to_string());
         }
-        return Err(res.unwrap_err())
+        return Err(res.unwrap_err());
     }
 
     Ok(res.unwrap())
@@ -244,18 +235,22 @@ pub fn get_user_message(message_id: String, phone_number: &str) -> Result<Event,
     let client = create_client().unwrap();
     let mut con = client.get_connection().unwrap();
 
-    let res: String = con.json_get(format!("incoming-messages:{}:{}", phone_number, message_id), ".").unwrap();
+    let res: String = con
+        .json_get(
+            format!("incoming-messages:{}:{}", phone_number, message_id),
+            ".",
+        )
+        .unwrap();
 
     let event: Event = serde_json::from_str(&res).unwrap();
 
     Ok(event)
 }
 
-
-pub fn is_nil(error: &RedisError) -> bool{
+pub fn is_nil(error: &RedisError) -> bool {
     return if error.to_string().contains("response was nil") {
         true
-    }else{
+    } else {
         false
-    }
+    };
 }

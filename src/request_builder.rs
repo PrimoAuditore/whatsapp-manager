@@ -185,7 +185,6 @@ impl MessageBuilder {
     }
 
     pub fn execute(&self) -> Result<MessageResponse, Box<dyn Error>> {
-
         let resp = ureq::post("https://graph.facebook.com/v15.0/110000391967238/messages")
             .set(
                 "Authorization",
@@ -214,7 +213,6 @@ impl MessageBuilder {
             }
         }
     }
-
 
     pub fn message_type(
         &mut self,
@@ -328,7 +326,6 @@ impl MessageBuilder {
                     .as_mut()
                     .unwrap()
                     .push(button);
-
             }
             MessageType::InteractiveList => {
                 error!("Invalid method for message type, use add_list_button method instead");

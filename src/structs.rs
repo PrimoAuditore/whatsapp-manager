@@ -3,8 +3,8 @@ use serde_derive::{Deserialize, Serialize};
 
 pub mod webhooks {
 
-    use serde_derive::{Deserialize, Serialize};
     use crate::structs::Storable;
+    use serde_derive::{Deserialize, Serialize};
 
     #[derive(Serialize, Deserialize, Clone)]
     pub struct Event {
@@ -12,7 +12,7 @@ pub mod webhooks {
         pub(crate) entry: Vec<Entry>,
     }
 
-    impl Storable for Event{}
+    impl Storable for Event {}
 
     #[derive(Serialize, Deserialize)]
     pub struct MediaData {
@@ -127,7 +127,6 @@ pub mod webhooks {
         id: String,
     }
 
-
     #[derive(Serialize, Deserialize, Clone)]
     pub struct Profile {
         name: String,
@@ -154,13 +153,7 @@ impl StandardResponse {
     }
 }
 
-
-pub trait Storable{
-}
-
-
-
-
+pub trait Storable {}
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ModifiedReference {
@@ -169,13 +162,12 @@ pub struct ModifiedReference {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct MessageLog{
+pub struct MessageLog {
     pub timestamp: String,
     pub destination_systems: Vec<String>,
     pub phone_number: String,
     pub origin: String,
-    pub register_id: String
+    pub register_id: String,
 }
 
-impl Storable for MessageLog{
-}
+impl Storable for MessageLog {}
