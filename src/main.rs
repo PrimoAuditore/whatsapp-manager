@@ -74,7 +74,7 @@ async fn incoming_messages(log: web::Json<MessageLog>) -> impl Responder {
 async fn test(log: String) -> impl Responder {
     println!("{}", log);
 
-    HttpResponse:Ok()
+    "Ok"
 }
 
 #[post("/outgoing")]
