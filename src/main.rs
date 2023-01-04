@@ -70,13 +70,6 @@ async fn incoming_messages(log: web::Json<MessageLog>) -> impl Responder {
     }
 }
 
-#[post("/test")]
-async fn test(log: String) -> impl Responder {
-    println!("{}", log);
-
-    "Ok"
-}
-
 #[post("/outgoing")]
 async fn outgoing_messages(log: web::Json<MessageLog>) -> impl Responder {
     // let response = request_handler::send_menu(log.0);
