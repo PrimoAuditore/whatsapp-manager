@@ -31,7 +31,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(|| {
         App::new()
-            .wrap(Logger::new("%U"))
+            .wrap(Logger::new("%U").log_target("INFO"))
             .service(health)
             .service(webhook)
             .service(validate)

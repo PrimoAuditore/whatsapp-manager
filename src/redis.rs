@@ -1,5 +1,5 @@
 use crate::request_builder::{MessageBuilder, MessageRequest, MessageResponse, MessageType};
-use log::{error, trace};
+use log::{debug, error, trace};
 use redis::{Client, Commands, ControlFlow, JsonCommands, PubSubCommands, RedisError, RedisResult};
 use std::env::VarError;
 use std::error::Error;
@@ -144,11 +144,11 @@ pub fn get_user_mode(phone_number: &str) -> Result<u16, RedisError> {
 
     if mode.is_err(){
 
-        let is_nil = is_nil(mode.as_ref().unwrap_err());
 
+        let is_nil = is_nil(mode.as_ref().unwrap_err());
         // Sets user mode to 0 in case its the first message
         return if is_nil {
-            set_user_mode(phone_number, "0");
+            set_user_mode(phone_number, "100");
             Ok(0)
         }else{
             Err(mode.unwrap_err())
@@ -156,6 +156,7 @@ pub fn get_user_mode(phone_number: &str) -> Result<u16, RedisError> {
     }
 
     let parsed_mode = mode.unwrap().parse::<u16>().unwrap();
+
 
     Ok(parsed_mode)
 

@@ -185,7 +185,6 @@ impl MessageBuilder {
     }
 
     pub fn execute(&self) -> Result<MessageResponse, Box<dyn Error>> {
-        println!("{:?}", serde_json::to_string(&self.request));
 
         let resp = ureq::post("https://graph.facebook.com/v15.0/110000391967238/messages")
             .set(
@@ -303,7 +302,6 @@ impl MessageBuilder {
         button_content: &str,
         button_id: Option<&str>,
     ) -> &mut MessageBuilder {
-        println!("{}", &self.request.message_type);
         let mut copy = self.request.clone();
         if self.request.message_type == "text" {
             error!("Text message type doesnt allow actions");
@@ -331,7 +329,6 @@ impl MessageBuilder {
                     .unwrap()
                     .push(button);
 
-                // println!("{}", copy.interactive.unwrap().action.buttons.unwrap()[0].button_type);
             }
             MessageType::InteractiveList => {
                 error!("Invalid method for message type, use add_list_button method instead");
