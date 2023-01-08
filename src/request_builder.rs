@@ -1,5 +1,5 @@
 use crate::structs::webhooks;
-use log::error;
+use log::{debug, error};
 use serde_derive::{Deserialize, Serialize};
 use std::error::Error;
 use std::time::Duration;
@@ -22,8 +22,8 @@ pub struct MessageContent {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ListMessage {
-    title: String,
-    choices: Vec<String>,
+    pub title: String,
+    pub choices: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -185,6 +185,7 @@ impl MessageBuilder {
     }
 
     pub fn execute(&self) -> Result<MessageResponse, Box<dyn Error>> {
+        debug!("{}", ureq::json!(&self.request));
         let resp = ureq::post("https://graph.facebook.com/v15.0/110000391967238/messages")
             .set(
                 "Authorization",
@@ -261,6 +262,13 @@ impl MessageBuilder {
                 self.request.interactive = clone;
             }
         }
+
+        self
+    }
+
+    pub fn main_button_content(&mut self, button_name: String) -> &mut MessageBuilder {
+
+        self.request.interactive.as_mut().unwrap().action.button = Some(button_name);
 
         self
     }
@@ -355,6 +363,8 @@ impl MessageBuilder {
         button_id: Option<&str>,
         button_name: &str,
     ) -> &mut MessageBuilder {
+
+        let mut copy = self.request.clone();
         if self.request.message_type == "text" {
             error!("Text message type doesnt allow actions");
             panic!("Text message type doesnt allow actions")
@@ -362,36 +372,44 @@ impl MessageBuilder {
 
         match MessageType::from_str(&self.request.interactive.as_ref().unwrap().interactive_type) {
             MessageType::InteractiveList => {
-                let mut section: Section = Section {
-                    title: button_name.to_string(),
-                    rows: vec![],
-                };
-
                 let default = format!("{}-id", button_content.to_lowercase().replace(" ", "-"));
-
                 let button_id_str = button_id.unwrap_or(default.as_str());
-                let row = Row {
-                    title: button_content.to_string(),
+
+                // Check if section exists, if not creates a section with an empty list of buttons
+                if copy.interactive.as_ref().unwrap().action.sections.is_none() {
+
+                    let section = Some(vec![Section{
+                        title: "".to_string(),
+                        rows: vec![],
+                    }]);
+
+
+                    copy.interactive
+                        .as_mut()
+                        .unwrap()
+                        .action
+                        .sections = section;
+                }
+
+                let row = Row{
                     id: button_id_str.to_string(),
+                    title: button_content.to_string(),
                 };
 
-                section.rows.push(row);
 
-                self.request
-                    .clone()
-                    .interactive
-                    .unwrap()
-                    .action
-                    .sections
-                    .unwrap()
-                    .push(section);
+                &copy.interactive.as_mut().unwrap().action.sections.as_mut().unwrap()[0].rows.push(row);
+
+
+
             }
             MessageType::InteractiveButton => {
-                error!("Invalid method for message type, use add_reply_button method instead");
-                panic!("Invalid method for message type, use add_reply_button method instead")
+                error!("Invalid method for message type, use add_list_button method instead");
+                panic!("Invalid method for message type, use add_list_button method instead")
             }
             _ => {}
         }
+
+        self.request = copy;
 
         self
     }

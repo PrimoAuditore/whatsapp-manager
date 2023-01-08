@@ -120,7 +120,33 @@ pub fn create_message(
         }
 
         MessageType::InteractiveList => {
-            todo!();
+            let mut request = MessageBuilder::new()
+                .message_type(
+                    MessageType::Interactive,
+                    Some(MessageType::InteractiveList),
+                )
+                .to(to)
+                .header(String::from(&message.clone().content.list.as_ref().unwrap().title))
+                .body(message.clone().content.body.unwrap())
+                .main_button_content("Opciones".to_string())
+                .clone();
+
+            for button in &message.clone().content.list.as_ref().unwrap().choices {
+                request.add_list_button(button, None, &message.clone().content.list.as_ref().unwrap().title);
+            }
+
+            let response = request.execute();
+
+            match response {
+                Ok(response_body) => Ok(response_body),
+                Err(err) => {
+                    error!(
+                        "{}",
+                        format!("Couldnt proccess message creation: {}", err.to_string()).as_str()
+                    );
+                    Err(err)
+                }
+            }
         }
         _ => {
             panic!("Invalid option")
