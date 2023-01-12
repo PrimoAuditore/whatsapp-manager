@@ -241,9 +241,9 @@ pub fn send_menu(log: MessageLog) -> Result<StandardResponse, StandardResponse> 
         send_message(request);
 
         return Ok(response);
-    };
+    }
 
-    // Get user last message
+    // Get user last message id
     let ws_message_id = get_user_last_message(&log.phone_number);
 
     if ws_message_id.is_err() {
@@ -256,7 +256,7 @@ pub fn send_menu(log: MessageLog) -> Result<StandardResponse, StandardResponse> 
 
     info!("User last message id: {}", ws_message_id.as_ref().unwrap());
 
-    // Get message content
+    // Get user last message content
     let ws_message: Result<Event, RedisError> = get_user_message(
         ws_message_id.as_ref().unwrap().to_string(),
         &log.phone_number,
@@ -282,6 +282,7 @@ pub fn send_menu(log: MessageLog) -> Result<StandardResponse, StandardResponse> 
 
     info!("message Type: {}", &message_type);
 
+    // Returns error is user send a non plain text message
     if message_type != "text" {
         errors.push("Message type has to be a text message, with only the number of the mode to be selected.".to_string());
 
@@ -303,19 +304,22 @@ pub fn send_menu(log: MessageLog) -> Result<StandardResponse, StandardResponse> 
         return Err(response);
     }
 
+
+    // MODE MANAGEMENT
+
     // Check if user wanna change mode
     if mode != 0
         && ws_message.as_ref().unwrap().entry[0].changes[0]
-            .value
-            .messages
-            .as_ref()
-            .unwrap()[0]
-            .text
-            .as_ref()
-            .unwrap()
-            .body
-            .to_lowercase()
-            == "salir"
+        .value
+        .messages
+        .as_ref()
+        .unwrap()[0]
+        .text
+        .as_ref()
+        .unwrap()
+        .body
+        .to_lowercase()
+        == "salir"
     {
         info!("User exiting mode {}", &mode);
 
@@ -339,15 +343,16 @@ pub fn send_menu(log: MessageLog) -> Result<StandardResponse, StandardResponse> 
         .body
         .parse::<u8>();
 
+    // Send error is message cant be parsed to a number
     if option.is_err() {
-        errors.push("2. La opcion ingresada no es valida, debe ingresar solamente el numero de la opcion a seleccionar, intente nuevamente.".to_string());
+        errors.push("La opcion ingresada no es valida, debe ingresar solamente el numero de la opcion a seleccionar, intente nuevamente.".to_string());
 
         let request = MessageRequest{
             system_id: 1,
             to: vec![log.phone_number],
             message_type: "text".to_string(),
             content: MessageContent {
-                body: Some("2. La opcion ingresada no es valida, debe ingresar solamente el numero de la opcion a seleccionar, intente nuevamente.".to_string()),
+                body: Some("La opcion ingresada no es valida, debe ingresar solamente el numero de la opcion a seleccionar, intente nuevamente.".to_string()),
                 list: None,
                 buttons: None,
             },
@@ -360,13 +365,15 @@ pub fn send_menu(log: MessageLog) -> Result<StandardResponse, StandardResponse> 
         return Err(response);
     }
 
+    // Unwraps parsed number
     let option_number = option.unwrap();
 
     info!("Option selected: {}", &option_number);
 
-    // check if option is between valid modes
+    // Get destination systems for the selected number
     let systems = get_destination_system(option_number as u16);
 
+    // Error obtaining mode destination systems
     if systems.is_err() {
         errors.push(systems.as_ref().unwrap_err().to_string());
 
@@ -376,12 +383,9 @@ pub fn send_menu(log: MessageLog) -> Result<StandardResponse, StandardResponse> 
         return Err(response);
     }
 
-    info!(
-        "mode {} systems: {:?}",
-        option_number,
-        systems.as_ref().unwrap()
-    );
+    info!("mode {} systems: {:?}",option_number,systems.as_ref().unwrap());
 
+    // error is destination systems for mode is an empty list
     if systems.as_ref().unwrap().is_empty() {
         errors.push("El modo seleccionado no se encuentra entre las opciones disponibles, selecciona un modo listado.".to_string());
         let request = MessageRequest{
@@ -403,42 +407,63 @@ pub fn send_menu(log: MessageLog) -> Result<StandardResponse, StandardResponse> 
         return Err(response);
     }
 
-    // Set user new mode
-    set_user_mode(&log.phone_number, &option_number.to_string());
 
-    // Notify user selection
-    let timestamp = match SystemTime::now().duration_since(UNIX_EPOCH) {
-        Ok(n) => n.as_millis().to_string(),
-        Err(_) => panic!("SystemTime before UNIX EPOCH!"),
-    };
+    // If user is in mode selection
+    if mode == 0{
 
-    // Notify selection successful
-    let notification_log = MessageLog {
-        timestamp: timestamp,
-        destination_systems: vec!["3".to_string()],
-        phone_number: String::from(&log.phone_number),
-        origin: "OUTGOING".to_string(),
-        register_id: ws_message_id.unwrap(),
-    };
+        // Set user new mode
+        set_user_mode(&log.phone_number, &option_number.to_string());
 
-    // TODO: Implement retries
-    publish_message(&notification_log, &log.phone_number);
+        // Notify user selection
+        let timestamp = match SystemTime::now().duration_since(UNIX_EPOCH) {
+            Ok(n) => n.as_millis().to_string(),
+            Err(_) => panic!("SystemTime before UNIX EPOCH!"),
+        };
 
-    let request = MessageRequest{
-        system_id: 1,
-        to: vec![log.phone_number],
-        message_type: "text".to_string(),
-        content: MessageContent {
-            body: Some(format!("Ha seleccionado el opcion {}, si desea seleccionar otra opcion esriba 'salir' en el chat.", option_number)),
-            list: None,
-            buttons: None,
-        },
-    };
+        // Notify selection successful
+        let notification_log = MessageLog {
+            timestamp: timestamp,
+            destination_systems: systems.unwrap(),
+            phone_number: String::from(&log.phone_number),
+            origin: "OUTGOING".to_string(),
+            register_id: ws_message_id.unwrap(),
+        };
 
-    send_message(request);
+        publish_message(&notification_log, &log.phone_number);
+
+        let request = MessageRequest{
+            system_id: 1,
+            to: vec![log.phone_number],
+            message_type: "text".to_string(),
+            content: MessageContent {
+                body: Some(format!("Ha seleccionado el opcion {}, si desea seleccionar otra opcion esriba 'salir' en el chat.", option_number)),
+                list: None,
+                buttons: None,
+            },
+        };
+
+        send_message(request);
+    }
+
+    // If there a system mode selected
+    if mode != 0 && mode !=100 {
+
+        // Notify selection successful
+        let notification_log = MessageLog {
+            timestamp: timestamp,
+            destination_systems: systems.unwrap(),
+            phone_number: String::from(&log.phone_number),
+            origin: "INCOMING".to_string(),
+            register_id: ws_message_id.unwrap(),
+        };
+
+        publish_message(&notification_log, &log.phone_number);
+
+    }
 
     response.references = references;
     response.errors = None;
 
     Ok(response)
+
 }
