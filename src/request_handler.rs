@@ -327,6 +327,18 @@ pub fn send_menu(log: MessageLog) -> Result<StandardResponse, StandardResponse> 
         .unwrap()
         .body
         .to_lowercase());
+
+    println!("mode: {}", mode);
+    println!("content: {}", ws_message.as_ref().unwrap().entry[0].changes[0]
+        .value
+        .messages
+        .as_ref()
+        .unwrap()[0]
+        .text
+        .as_ref()
+        .unwrap()
+        .body
+        .to_lowercase());
     if mode != 0
         && ws_message.as_ref().unwrap().entry[0].changes[0]
         .value
