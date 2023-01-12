@@ -94,6 +94,14 @@ pub fn webhook_message(event: Event) -> Result<StandardResponse, StandardRespons
     let mut errors: Vec<String> = vec![];
     let mut references = vec![];
 
+    if event.entry[0].changes[0].value.messages.is_none() {
+        error!("Not a user message");
+        errors.push("Not a user message".to_string());
+
+        response.errors = Some(errors);
+        return  Err(response)
+    }
+
     let phone_number = &event.entry[0].changes[0].value.messages.as_ref().unwrap()[0]
         .from
         .clone();
