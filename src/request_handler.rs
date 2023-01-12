@@ -425,17 +425,17 @@ pub fn send_menu(log: MessageLog) -> Result<StandardResponse, StandardResponse> 
         // Notify selection successful
         let notification_log = MessageLog {
             timestamp: timestamp,
-            destination_systems: systems.unwrap(),
+            destination_systems: systems.as_ref().unwrap().clone(),
             phone_number: String::from(&log.phone_number),
             origin: "OUTGOING".to_string(),
-            register_id: ws_message_id.unwrap(),
+            register_id: ws_message_id.as_ref().unwrap().clone(),
         };
 
         publish_message(&notification_log, &log.phone_number);
 
         let request = MessageRequest{
             system_id: 1,
-            to: vec![log.phone_number],
+            to: vec![log.clone().phone_number],
             message_type: "text".to_string(),
             content: MessageContent {
                 body: Some(format!("Ha seleccionado el opcion {}, si desea seleccionar otra opcion esriba 'salir' en el chat.", option_number)),
@@ -452,13 +452,18 @@ pub fn send_menu(log: MessageLog) -> Result<StandardResponse, StandardResponse> 
 
         info!("Sending message to user selected option system");
 
+        let timestamp = match SystemTime::now().duration_since(UNIX_EPOCH) {
+            Ok(n) => n.as_millis().to_string(),
+            Err(_) => panic!("SystemTime before UNIX EPOCH!"),
+        };
+
         // Notify selection successful
         let notification_log = MessageLog {
             timestamp: timestamp,
-            destination_systems: systems.unwrap(),
-            phone_number: String::from(&log.phone_number),
+            destination_systems: systems.as_ref().unwrap().clone(),
+            phone_number: String::from(&log.clone().phone_number),
             origin: "INCOMING".to_string(),
-            register_id: ws_message_id.unwrap(),
+            register_id: ws_message_id.as_ref().unwrap().clone(),
         };
 
         publish_message(&notification_log, &log.phone_number);
