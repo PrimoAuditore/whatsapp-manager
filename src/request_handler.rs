@@ -411,6 +411,8 @@ pub fn send_menu(log: MessageLog) -> Result<StandardResponse, StandardResponse> 
     // If user is in mode selection
     if mode == 0{
 
+        info!("Processing user option selection");
+
         // Set user new mode
         set_user_mode(&log.phone_number, &option_number.to_string());
 
@@ -447,6 +449,8 @@ pub fn send_menu(log: MessageLog) -> Result<StandardResponse, StandardResponse> 
 
     // If there a system mode selected
     if mode != 0 && mode !=100 {
+
+        info!("Sending message to user selected option system");
 
         // Notify selection successful
         let notification_log = MessageLog {
