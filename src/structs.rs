@@ -166,6 +166,7 @@ pub struct MessageLog {
     pub timestamp: String,
     pub destination_systems: Vec<String>,
     pub phone_number: String,
+    pub origin_system: String,
     pub origin: String,
     pub register_id: String,
 }

@@ -58,10 +58,10 @@ curl --request POST \
 
 ### Systems IDS
 
-- 0 -> ALL SYSTEMS
 - 1 -> Whatsapp Manager
-- 2 -> META API
-- 3 -> Request Classifier
+- 2 -> Request Informer
+- 3 -> Whatsapp Workflow
+- 4 -> META API
 
 
 ### User Modes

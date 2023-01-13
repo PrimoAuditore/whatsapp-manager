@@ -50,6 +50,7 @@ pub fn send_message(message: MessageRequest) -> Result<StandardResponse, Standar
                             timestamp: timestamp,
                             destination_systems: vec!["0".to_string()],
                             phone_number: receiver.to_string(),
+                            origin_system: "1".to_string(),
                             origin: "OUTGOING".to_string(), //OUTGOING or INCOMING
                             register_id: storage_id.clone(),
                         };
@@ -172,6 +173,7 @@ pub fn webhook_message(event: Event) -> Result<StandardResponse, StandardRespons
         timestamp: timestamp,
         destination_systems: destination_system.unwrap(),
         phone_number: phone_number.to_string(),
+        origin_system: "4".to_string(), // META API
         origin: "INCOMING".to_string(), //OUTGOING or INCOMING
         register_id: message_id.to_string(),
     };
@@ -339,6 +341,7 @@ pub fn send_menu(log: MessageLog) -> Result<StandardResponse, StandardResponse> 
         .unwrap()
         .body
         .to_lowercase());
+
     if mode != 0
         && ws_message.as_ref().unwrap().entry[0].changes[0]
         .value
@@ -458,6 +461,7 @@ pub fn send_menu(log: MessageLog) -> Result<StandardResponse, StandardResponse> 
             timestamp: timestamp,
             destination_systems: systems.as_ref().unwrap().clone(),
             phone_number: String::from(&log.phone_number),
+            origin_system: "1".to_string(),
             origin: "OUTGOING".to_string(),
             register_id: ws_message_id.as_ref().unwrap().clone(),
         };
@@ -493,6 +497,7 @@ pub fn send_menu(log: MessageLog) -> Result<StandardResponse, StandardResponse> 
             timestamp: timestamp,
             destination_systems: systems.as_ref().unwrap().clone(),
             phone_number: String::from(&log.clone().phone_number),
+            origin_system: "4".to_string(),
             origin: "INCOMING".to_string(),
             register_id: ws_message_id.as_ref().unwrap().clone(),
         };
