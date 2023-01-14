@@ -21,8 +21,10 @@ pub fn send_message(message: MessageRequest) -> Result<StandardResponse, Standar
     let mut references = vec![];
 
     // Iterate over receiver
+    info!("Sending message: {}", serde_json::to_string_pretty(&message).unwrap());
     for receiver in &message.to {
         // Sends the message though whatsapp API
+        info!("Creating message");
         let created_message = create_message(&message, receiver.to_string());
 
         match created_message {
@@ -33,9 +35,10 @@ pub fn send_message(message: MessageRequest) -> Result<StandardResponse, Standar
                     system: "WHATSAPP".to_string(),
                     reference: id.to_string(),
                 });
-                trace!("Create message with id: {}", id);
+                info!("Create message with id: {}", id);
 
                 // Store message
+                info!("Storing message");
                 let store_res = store_message(&message, receiver, id, "outgoing-messages");
 
                 match store_res {
@@ -56,8 +59,10 @@ pub fn send_message(message: MessageRequest) -> Result<StandardResponse, Standar
                         };
 
                         // Publish message
+                        info!("Publishing message");
                         let publish_res = publish_message(&log, receiver);
 
+                        info!("Logging message");
                         log_message(&log);
 
                         references.push(ModifiedReference {
@@ -110,11 +115,13 @@ pub fn webhook_message(event: Event) -> Result<StandardResponse, StandardRespons
         .id
         .clone();
 
+    info!("Getting user last message reference");
     let message_reference = get_user_last_message(&phone_number).unwrap();
 
     let mut expired_message = false;
     if message_reference != "" {
         // Get user last message linked to previously obtained reference
+        info!("Getting user last message");
         let message = get_user_message(message_reference, &phone_number).unwrap();
 
         // Check expiration time for user last message
@@ -129,7 +136,7 @@ pub fn webhook_message(event: Event) -> Result<StandardResponse, StandardRespons
 
         let time_difference = SystemTime::now().duration_since(SystemTime::from(parsed_time));
 
-        trace!(
+        info!(
             "since last message: {} secs",
             time_difference.as_ref().unwrap().as_secs()
         );
@@ -147,12 +154,15 @@ pub fn webhook_message(event: Event) -> Result<StandardResponse, StandardRespons
         };
     }
 
+    info!("Getting user mode");
     let mode = get_user_mode(phone_number).unwrap();
 
     // Get mode destination systems
+    info!("Gettings destionation systems");
     let destination_system = get_destination_system(mode);
 
     // Store json message on redis
+    info!("Storing message");
     let json_result = store_message(
         &event.clone(),
         phone_number,
@@ -184,6 +194,7 @@ pub fn webhook_message(event: Event) -> Result<StandardResponse, StandardRespons
     };
 
     // Publish notification to channel
+    info!("Publishing message");
     let publish_res = publish_message(&log, phone_number);
 
     match publish_res {
@@ -194,6 +205,7 @@ pub fn webhook_message(event: Event) -> Result<StandardResponse, StandardRespons
             });
 
             // Store notification sent to channel
+            println!("Log message");
             let id = log_message(&log);
 
             match id {
