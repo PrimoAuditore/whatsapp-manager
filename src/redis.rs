@@ -189,7 +189,7 @@ pub fn set_user_mode(phone_number: &str, mode: &str) -> Result<String, RedisErro
     let mut con = client.get_connection().unwrap();
 
     let mode: RedisResult<String> =
-        con.hset(format!("selected-mode:{}", phone_number), "mode", mode.to);
+        con.hset(format!("selected-mode:{}", phone_number), "mode", mode);
 
     if mode.is_ok() {
         Ok(mode.unwrap().clone())
