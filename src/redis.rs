@@ -158,9 +158,13 @@ pub fn get_user_mode(phone_number: &str) -> Result<u16, RedisError> {
     let client = create_client().unwrap();
     let mut con = client.get_connection().unwrap();
 
+    println!("{}", format!("selected-mode:{}", phone_number));
+
     let mode: RedisResult<String> = con.hget(format!("selected-mode:{}", phone_number), "mode");
 
+    println!("2222: {}", mode.as_ref().unwrap());
     if mode.is_err() {
+        error!("Error obtaining mode: {}", mode.as_ref().unwrap_err());
         let is_nil = is_nil(mode.as_ref().unwrap_err());
         // Sets user mode to 0 in case its the first message
         return if is_nil {
@@ -171,7 +175,11 @@ pub fn get_user_mode(phone_number: &str) -> Result<u16, RedisError> {
         };
     }
 
+    println!("33333: {}", mode.as_ref().unwrap());
+
     let parsed_mode = mode.unwrap().parse::<u16>().unwrap();
+
+    println!("Parsed: {}", parsed_mode);
 
     Ok(parsed_mode)
 }
@@ -181,7 +189,7 @@ pub fn set_user_mode(phone_number: &str, mode: &str) -> Result<String, RedisErro
     let mut con = client.get_connection().unwrap();
 
     let mode: RedisResult<String> =
-        con.hset(format!("selected-mode:{}", phone_number), "mode", mode);
+        con.hset(format!("selected-mode:{}", phone_number), "mode", mode.to);
 
     if mode.is_ok() {
         Ok(mode.unwrap().clone())

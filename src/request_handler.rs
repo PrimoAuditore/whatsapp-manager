@@ -136,8 +136,13 @@ pub fn webhook_message(event: Event) -> Result<StandardResponse, StandardRespons
 
         // If message was 6 hours or more ago
         if time_difference.unwrap().as_secs() > 21600 {
+            info!("Message expired");
             // reset user mode to 0
-            set_user_mode(phone_number, "100");
+            let res = set_user_mode(phone_number, "100");
+
+            if res.is_err(){
+                error!("{}", res.as_ref().unwrap_err())
+            }
             expired_message = true;
         };
     }
@@ -234,6 +239,7 @@ pub fn send_menu(log: MessageLog) -> Result<StandardResponse, StandardResponse> 
 
     // Check if user has an expired message or has never sent a message before
     if mode == 100 {
+        info!("Sending menu to user");
         let request = MessageRequest {
             system_id: 1,
             to: vec![String::from(&log.phone_number)],
@@ -497,7 +503,7 @@ pub fn send_menu(log: MessageLog) -> Result<StandardResponse, StandardResponse> 
             timestamp: timestamp,
             destination_systems: systems.as_ref().unwrap().clone(),
             phone_number: String::from(&log.clone().phone_number),
-            origin_system: "4".to_string(),
+            origin_system: "1".to_string(),
             origin: "INCOMING".to_string(),
             register_id: ws_message_id.as_ref().unwrap().clone(),
         };
