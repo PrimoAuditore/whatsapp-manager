@@ -3,7 +3,7 @@ on:
     types: [opened, synchronize]
 
 
-name: Deploy DEV environment
+name: Deploy dev environment
 
 jobs:
   test_debug:
