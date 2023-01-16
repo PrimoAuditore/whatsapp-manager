@@ -1,0 +1,27 @@
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+
+name: Deploy DEV environment
+
+jobs:
+  test_debug:
+    name: Rust project
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - run: python main.py base_deployment.yaml
+    env:
+      ENV_REDIS_URL: ${{ secrets.REDIS_URL }}
+      ENV_RUST_LOG: ${{ secrets.RUST_LOG }}
+      ENV_META_TOKEN: ${{ secrets.META_TOKEN }}
+      APP_PR: ${{github.event.pull_request.number}}
+      APP_NAMESPACE: ${{ var.APP_NAMESPACE }}
+      APP_IMAGE: ${{ var.APP_IMAGE }}
+      APP_NAME: ${{ var.APP_NAME}}
+      APP_INGRESS_PATH: ${{ var.APP_INGRESS_PATH}}
