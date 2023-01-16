@@ -21,7 +21,7 @@ jobs:
       ENV_RUST_LOG: ${{ secrets.RUST_LOG }}
       ENV_META_TOKEN: ${{ secrets.META_TOKEN }}
       APP_PR: ${{github.event.pull_request.number}}
-      APP_NAMESPACE: ${{ var.APP_NAMESPACE }}
-      APP_IMAGE: ${{ var.APP_IMAGE }}
-      APP_NAME: ${{ var.APP_NAME}}
-      APP_INGRESS_PATH: ${{ var.APP_INGRESS_PATH}}
+      APP_NAMESPACE: ${{ vars.APP_NAMESPACE }}
+      APP_IMAGE: ${{ vars.APP_IMAGE }}
+      APP_NAME: ${{ vars.APP_NAME}}
+      APP_INGRESS_PATH: ${{ vars.APP_INGRESS_PATH}}
