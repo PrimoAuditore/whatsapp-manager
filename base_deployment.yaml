@@ -24,7 +24,7 @@ spec:
             - name: {{ key.upper() }}
               valueFrom:
                 secretKeyRef:
-                  name: {{ config.name }}-{{ config.suffix}}-env
+                  name: {{ config.name }}-{{ config.namespace }}-mr{{ config.pr }}-env
                   key: {{ key.upper() }}
             {% endfor %}
           ports:
