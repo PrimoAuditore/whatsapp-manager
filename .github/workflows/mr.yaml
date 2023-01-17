@@ -18,7 +18,7 @@ jobs:
           cache: 'pip'
       - run: pip install jinja2
       - run: python main.py base_deployment.yaml > parsed_manifest.yaml
-      - run: echo parsed_manifest.yaml
+      - run: cat parsed_manifest.yaml
     env:
       ENV_REDIS_URL: ${{ secrets.REDIS_URL }}
       ENV_RUST_LOG: ${{ secrets.RUST_LOG }}
