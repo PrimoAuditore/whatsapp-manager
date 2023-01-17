@@ -1,6 +1,8 @@
 on:
-  pull_request:
-    types: [opened, synchronize]
+  push:
+    tags:
+      - v**
+
 
 
 name: Deploy production environment
@@ -28,7 +30,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ vars.APP_IMAGE }}:mr${{github.event.pull_request.number}}
+          tags: ${{ vars.APP_IMAGE }}:${{GITHUB_REF_NAME}}
 
   deploy-dev:
     name: Deploy DEV
@@ -42,7 +44,7 @@ jobs:
           python-version: '3.10'
           cache: 'pip'
       - run: pip install jinja2
-      - run: python main.py base_deployment.yaml > parsed_manifest.yaml
+      - run: python main.py base_deployment_prod.yaml > parsed_manifest.yaml
       - run: cat parsed_manifest.yaml
       - name: Destroy old deployment
         uses: Consensys/kubernetes-action@master
@@ -60,7 +62,7 @@ jobs:
       ENV_REDIS_URL: ${{ secrets.ENV_REDIS_URL }}
       ENV_RUST_LOG: ${{ secrets.ENV_RUST_LOG }}
       ENV_META_TOKEN: ${{ secrets.ENV_META_TOKEN }}
-      APP_PR: ${{github.event.pull_request.number}}
+      APP_TAG: ${{GITHUB_REF_NAME}}
       APP_NAMESPACE: ${{ vars.APP_NAMESPACE }}
       APP_IMAGE: ${{ vars.APP_IMAGE }}
       APP_NAME: ${{ vars.APP_NAME}}
