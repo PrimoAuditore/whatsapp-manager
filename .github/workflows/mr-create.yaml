@@ -49,7 +49,7 @@ jobs:
         env:
           KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
         with:
-          args: delete -f parsed_manifest.yaml
+          args: delete -f parsed_manifest.yaml --ignore-not-found
       - name: Create new deployment
         uses: Consensys/kubernetes-action@master
         env:
