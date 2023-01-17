@@ -30,7 +30,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ vars.APP_IMAGE }}:${{ github.event.release.tag_name }}
+          tags: ${{ vars.APP_IMAGE }}:${{ github.ref_name }}
 
   deploy-dev:
     name: Deploy DEV
