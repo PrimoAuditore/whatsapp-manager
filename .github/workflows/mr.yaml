@@ -34,6 +34,7 @@ jobs:
     name: Deploy DEV
     runs-on: ubuntu-latest
     environment: dev
+    needs: [build-image]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
