@@ -16,7 +16,7 @@ jobs:
           python-version: '3.10'
           cache: 'pip'
       - run: pip install jinja2
-      - run: python main.py base_deployment.yaml > parsed_manifest.yaml
+      - run: python main.py base_deployment_mr.yaml > parsed_manifest.yaml
       - run: cat parsed_manifest.yaml
       - name: Destroy old deployment
         uses: Consensys/kubernetes-action@master
