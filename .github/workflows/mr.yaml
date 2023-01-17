@@ -18,6 +18,7 @@ jobs:
           cache: 'pip'
       - run: pip install jinja2
       - run: python main.py base_deployment.yaml > parsed_manifest.yaml
+      - run: cat parsed_manifest.yaml
       - name: Trigger deploy
         uses: Consensys/kubernetes-action@master
         env:
