@@ -15,6 +15,8 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
+          cache: 'pip'
+      - run: pip install jinja2
       - run: python main.py base_deployment.yaml
     env:
       ENV_REDIS_URL: ${{ secrets.REDIS_URL }}
