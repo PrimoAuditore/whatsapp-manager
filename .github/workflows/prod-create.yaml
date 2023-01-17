@@ -30,7 +30,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ vars.APP_IMAGE }}:${{GITHUB_REF_NAME}}
+          tags: ${{ vars.APP_IMAGE }}:${{ env.GITHUB_REF_NAME }}
 
   deploy-dev:
     name: Deploy DEV
@@ -62,7 +62,7 @@ jobs:
       ENV_REDIS_URL: ${{ secrets.ENV_REDIS_URL }}
       ENV_RUST_LOG: ${{ secrets.ENV_RUST_LOG }}
       ENV_META_TOKEN: ${{ secrets.ENV_META_TOKEN }}
-      APP_TAG: ${{GITHUB_REF_NAME}}
+      APP_TAG: ${{ env.GITHUB_REF_NAME }}
       APP_NAMESPACE: ${{ vars.APP_NAMESPACE }}
       APP_IMAGE: ${{ vars.APP_IMAGE }}
       APP_NAME: ${{ vars.APP_NAME}}
