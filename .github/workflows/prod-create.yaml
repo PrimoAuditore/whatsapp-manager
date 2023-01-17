@@ -33,7 +33,7 @@ jobs:
           tags: ${{ vars.APP_IMAGE }}:${{ github.ref_name }}
 
   deploy-dev:
-    name: Deploy DEV
+    name: Deploy PROD
     runs-on: ubuntu-latest
     environment: production
     needs: [build-image]

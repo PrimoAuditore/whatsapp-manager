@@ -28,6 +28,6 @@ for variable in env_values:
 templateLoader = jinja2.FileSystemLoader(searchpath="./")
 templateEnv = jinja2.Environment(loader=templateLoader)
 
-template = templateEnv.get_template("base_deployment.yaml")
+template = templateEnv.get_template(sys.argv[1])
 
 print(template.render(config=config, variables=env_variables))
