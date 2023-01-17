@@ -35,7 +35,7 @@ kind: Service
 metadata:
   labels:
     app: nginx
-  name: whatsapp-manager-svc-{{ config.suffix }}
+  name: whatsapp-manager-svc-{{ config.namespace }}-mr{{ config.pr }}
   namespace: {{ config.namespace }}
 spec:
   ports:
@@ -54,7 +54,7 @@ metadata:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/rewrite-target: /$2
-  name: whatsapp-manager-ingress-{{ config.suffix }}
+  name: whatsapp-manager-ingress-{{ config.namespace }}-mr{{ config.pr }}
   namespace: {{ config.namespace }}
 spec:
   ingressClassName: nginx
@@ -64,7 +64,7 @@ spec:
         paths:
           - backend:
               service:
-                name: whatsapp-manager-svc-{{ config.suffix }}
+                name: whatsapp-manager-svc-{{ config.namespace }}-mr{{ config.pr }}
                 port:
                   number: 80
             path: {{ config.ingress_path }}/mr{{config.pr}}(/|$)(.*)
