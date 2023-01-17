@@ -81,5 +81,5 @@ data:
 kind: Secret
 metadata:
   name: {{ config.name }}-{{ config.namespace }}-mr{{ config.pr }}-env
-  namespace: default
+  namespace: {{ config.namespace }}
 type: Opaque
