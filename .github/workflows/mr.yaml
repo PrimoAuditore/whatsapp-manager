@@ -27,9 +27,9 @@ jobs:
           args: apply -f parsed_manifest.yaml
 
     env:
-      ENV_REDIS_URL: ${{ secrets.REDIS_URL }}
-      ENV_RUST_LOG: ${{ secrets.RUST_LOG }}
-      ENV_META_TOKEN: ${{ secrets.META_TOKEN }}
+      ENV_REDIS_URL: ${{ secrets.ENV_REDIS_URL }}
+      ENV_RUST_LOG: ${{ secrets.ENV_RUST_LOG }}
+      ENV_META_TOKEN: ${{ secrets.ENV_META_TOKEN }}
       APP_PR: ${{github.event.pull_request.number}}
       APP_NAMESPACE: ${{ vars.APP_NAMESPACE }}
       APP_IMAGE: ${{ vars.APP_IMAGE }}
