@@ -23,7 +23,7 @@ jobs:
         env:
           KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
         with:
-          args: apply parsed_manifest.yaml
+          args: apply -f parsed_manifest.yaml
 
     env:
       ENV_REDIS_URL: ${{ secrets.REDIS_URL }}
