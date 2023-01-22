@@ -2,7 +2,7 @@ use crate::redis::{
     create_message, get_destination_system, get_user_last_message, get_user_message, get_user_mode,
     log_message, publish_message, set_last_message, set_user_mode, store_message,
 };
-use crate::request_builder::{MessageContent, MessageRequest, MessageResponse};
+use crate::request_builder::{MessageResponse};
 use crate::structs::webhooks::Event;
 use crate::structs::{MessageLog, ModifiedReference, StandardResponse};
 use actix_web::cookie::time::macros::offset;
@@ -14,6 +14,7 @@ use serde::de::Unexpected::Str;
 use std::error::Error;
 use std::fmt::format;
 use std::time::{SystemTime, UNIX_EPOCH};
+use fizzy_commons::shared_structs::{MessageContent, MessageRequest};
 
 pub fn send_message(message: MessageRequest) -> Result<StandardResponse, StandardResponse> {
     let mut response: StandardResponse = StandardResponse::new();
