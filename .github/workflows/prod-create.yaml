@@ -21,6 +21,9 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -31,6 +34,7 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ vars.APP_IMAGE }}:${{ github.ref_name }}
+          ssh: default
 
   deploy-dev:
     name: Deploy PROD
