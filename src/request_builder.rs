@@ -5,14 +5,14 @@ use std::error::Error;
 use std::time::Duration;
 use ureq::Agent;
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct MessageRequest {
-    pub system_id: u8,
-    pub to: Vec<String>,
-    #[serde(rename(serialize = "type"))]
-    pub message_type: String,
-    pub content: MessageContent,
-}
+// #[derive(Serialize, Deserialize, Clone)]
+// pub struct MessageRequest {
+//     pub system_id: u8,
+//     pub to: Vec<String>,
+//     #[serde(rename(serialize = "type"))]
+//     pub message_type: String,
+//     pub content: MessageContent,
+// }
 #[derive(Serialize, Deserialize, Clone)]
 pub struct MessageContent {
     pub body: Option<String>,
