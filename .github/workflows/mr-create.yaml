@@ -32,7 +32,7 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ vars.APP_IMAGE }}:mr${{github.event.pull_request.number}}
-          ssh: ["default"]
+          ssh: default
 
   deploy-dev:
     name: Deploy DEV
