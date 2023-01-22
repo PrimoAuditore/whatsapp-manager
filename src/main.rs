@@ -9,7 +9,7 @@ mod structs;
 
 use crate::error_manager::get_public_error;
 use crate::redis::{create_message, log_message, publish_message, store_message};
-use crate::request_builder::{MessageContent, MessageRequest, MessageResponse};
+use crate::request_builder::{MessageContent, MessageResponse};
 use crate::structs::webhooks::Event;
 use crate::structs::{MessageLog, ModifiedReference, StandardResponse};
 use ::redis::RedisError;
@@ -21,6 +21,7 @@ use std::collections::HashMap;
 use std::env;
 use std::error::Error;
 use std::time::{SystemTime, UNIX_EPOCH};
+use fizzy_commons::shared_structs::MessageRequest;
 
 static SYSTEM_ID: &str = "01";
 

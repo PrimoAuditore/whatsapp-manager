@@ -1,5 +1,5 @@
 use crate::request_builder;
-use crate::request_builder::{MessageBuilder, MessageRequest, MessageResponse, MessageType};
+use crate::request_builder::{MessageBuilder, MessageResponse, MessageType};
 use crate::structs::webhooks::Event;
 use crate::structs::{MessageLog, Storable};
 use log::{debug, error, trace};
@@ -7,6 +7,7 @@ use redis::{Client, Commands, ControlFlow, JsonCommands, PubSubCommands, RedisEr
 use serde::Serialize;
 use std::env::VarError;
 use std::error::Error;
+use fizzy_commons::shared_structs::MessageRequest;
 
 fn create_client() -> Result<Client, RedisError> {
     let url = std::env::var("REDIS_URL").unwrap();
@@ -132,7 +133,7 @@ pub fn create_message(
                 .clone();
 
             for button in &message.clone().content.list.as_ref().unwrap().choices {
-                request.add_list_button(button, None, &message.clone().content.list.as_ref().unwrap().title);
+                request.add_list_button(&button.value, Some(&button.id), &message.clone().content.list.as_ref().unwrap().title);
             }
 
             let response = request.execute();
