@@ -23,6 +23,7 @@ jobs:
         with:
           key: ${{ secrets.SSH_KEY }}
           name: id_rsa # optional
+          known_hosts: unnecessary
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
