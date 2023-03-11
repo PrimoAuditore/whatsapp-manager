@@ -436,9 +436,8 @@ dependencies = [
 [[package]]
 name = "fizzy_commons"
 version = "0.1.0"
-source = "git+ssh://git@github.com/PrimoAuditore/fizzy-commons.git?tag=v2.0.0#f8988fd40e320b3a4894a3713f788091acfec08e"
+source = "git+ssh://git@github.com/PrimoAuditore/fizzy-commons.git?branch=fix/message-type-deserialize#0b5527e6f5a125006a528cfc52f502e93bd8a863"
 dependencies = [
- "redis",
  "serde",
  "serde_derive",
  "serde_json",
