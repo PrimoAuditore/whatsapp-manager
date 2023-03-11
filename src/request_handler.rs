@@ -259,7 +259,7 @@ pub fn send_menu(log: MessageLog) -> Result<StandardResponse, StandardResponse> 
             message_type: "text".to_string(),
             content: MessageContent {
                 body: Some(
-                    "Opciones disponibles:\n 1. Busqueda respuesto.\n 2. Ayuda.".to_string(),
+                    "Opciones disponibles:\n 1. Busqueda respuesto.\n 2. \n 3. Ayuda.".to_string(),
                 ),
                 list: None,
                 buttons: None,
